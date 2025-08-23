@@ -2,6 +2,8 @@ package com.bank.wallet.service;
 
 import com.bank.wallet.dto.wallet.WalletResponse;
 import com.bank.wallet.entity.Wallet;
+import com.bank.wallet.exception.InsufficientFundsException;
+import com.bank.wallet.exception.WalletNotFoundException;
 import com.bank.wallet.mapper.WalletMapper;
 import com.bank.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +39,25 @@ public class WalletService {
 
 	public WalletResponse getWallet(UUID walletId) {
 		var wallet = walletRepository.findById(walletId)
-			.orElseThrow(() -> new IllegalArgumentException("Wallet not found with ID: " + walletId));
+			.orElseThrow(() -> new WalletNotFoundException("Wallet not found: " + walletId));
 
 		return walletMapper.mapToResponse(wallet);
 	}
 
+	@Transactional
+	public BigDecimal depositAndGetNewBalance(UUID walletId, BigDecimal amount) {
+		var newBalance = walletRepository.depositAndGetNewBalance(walletId, amount);
+		if (newBalance.isEmpty()) throw new WalletNotFoundException("Wallet not found: " + walletId);
+		return newBalance.get();
+	}
+
+	@Transactional
+	public BigDecimal withdrawAndGetNewBalance(UUID walletId, BigDecimal amount) {
+		var newBalance = walletRepository.withdrawAndGetNewBalance(walletId, amount);
+		if (newBalance.isEmpty()) {
+			if (!walletRepository.existsById(walletId)) throw new WalletNotFoundException("Wallet not found: " + walletId);
+			throw new InsufficientFundsException("Insufficient funds for withdrawal", walletId, amount);
+		}
+		return newBalance.get();
+	}
 }

@@ -7,12 +7,6 @@ databaseChangeLog:
       sqlFile:
         path: classpath:db/changelog/001-create-enums.sql
         splitStatements: false
-      rollback:
-        - sql:
-            sql: |
-              DROP TYPE IF EXISTS idempotency_status CASCADE;
-              DROP TYPE IF EXISTS transfer_status CASCADE;
-              DROP TYPE IF EXISTS posting_type CASCADE;
 
   - changeSet:
       id: 002-create-wallets-table
@@ -21,9 +15,6 @@ databaseChangeLog:
       runOnChange: false
       sqlFile:
         path: classpath:db/changelog/002-create-wallets-table.sql
-      rollback:
-        - sql:
-            sql: DROP TABLE IF EXISTS wallets CASCADE;
 
   - changeSet:
       id: 003-create-transfers-table
@@ -32,9 +23,6 @@ databaseChangeLog:
       runOnChange: false
       sqlFile:
         path: classpath:db/changelog/003-create-transfers-table.sql
-      rollback:
-        - sql:
-            sql: DROP TABLE IF EXISTS transfers CASCADE;
 
   - changeSet:
       id: 004-create-ledger-entries-table
@@ -43,9 +31,6 @@ databaseChangeLog:
       runOnChange: false
       sqlFile:
         path: classpath:db/changelog/004-create-ledger-entries-table.sql
-      rollback:
-        - sql:
-            sql: DROP TABLE IF EXISTS ledger_entries CASCADE;
 
   - changeSet:
       id: 005-create-idempotency-keys-table
@@ -54,9 +39,6 @@ databaseChangeLog:
       runOnChange: false
       sqlFile:
         path: classpath:db/changelog/005-create-idempotency-keys-table.sql
-      rollback:
-        - sql:
-            sql: DROP TABLE IF EXISTS idempotency_keys CASCADE;
 
   - changeSet:
       id: 006-enforce-ledger-append-only
@@ -65,8 +47,11 @@ databaseChangeLog:
       runOnChange: false
       sqlFile:
         path: classpath:db/changelog/006-enforce-ledger-append-only.sql
-      rollback:
-        - sql:
-            sql: |
-              DROP TRIGGER IF EXISTS ledger_entries_append_only ON ledger_entries;
-              DROP FUNCTION IF EXISTS ledger_entries_append_only_guard() CASCADE;
+
+  - changeSet:
+      id: 007-rename-idempotency-status-succeeded-to-completed
+      author: tales.kerschner
+      comment: Rename idempotency_status enum value succeeded to completed
+      runOnChange: false
+      sqlFile:
+        path: classpath:db/changelog/007-rename-idempotency-status-succeeded-to-completed.sql

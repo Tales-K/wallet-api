@@ -44,45 +44,4 @@ public class LedgerEntry {
 	@Column("created_at")
 	private OffsetDateTime createdAt;
 
-	public void validateLedgerEntry() {
-		// Amount cannot be zero
-		if (amount == null || amount.compareTo(BigDecimal.ZERO) == 0) {
-			throw new IllegalArgumentException("Ledger amount cannot be zero");
-		}
-
-		if (postingType == null) {
-			throw new IllegalArgumentException("Posting type is required");
-		}
-
-		// Validate amount sign based on posting type
-		boolean shouldBePositive = postingType == PostingType.DEPOSIT || postingType == PostingType.TRANSFER_CREDIT;
-		boolean shouldBeNegative = postingType == PostingType.WITHDRAW || postingType == PostingType.TRANSFER_DEBIT;
-
-		if (shouldBePositive && amount.compareTo(BigDecimal.ZERO) <= 0) {
-			throw new IllegalArgumentException("Amount must be positive for " + postingType);
-		}
-		if (shouldBeNegative && amount.compareTo(BigDecimal.ZERO) >= 0) {
-			throw new IllegalArgumentException("Amount must be negative for " + postingType);
-		}
-
-
-		// Validate transfer_id presence based on posting type
-		boolean isTransferPosting = postingType == PostingType.TRANSFER_DEBIT || postingType == PostingType.TRANSFER_CREDIT;
-		boolean isDirectPosting = postingType == PostingType.DEPOSIT || postingType == PostingType.WITHDRAW;
-
-		if (isTransferPosting && transferId == null) {
-			throw new IllegalArgumentException("Transfer ID is required for " + postingType);
-		}
-		if (isDirectPosting && transferId != null) {
-			throw new IllegalArgumentException("Transfer ID must be null for " + postingType);
-		}
-	}
-
-	public boolean isDebit() {
-		return postingType == PostingType.WITHDRAW || postingType == PostingType.TRANSFER_DEBIT;
-	}
-
-	public boolean isCredit() {
-		return postingType == PostingType.DEPOSIT || postingType == PostingType.TRANSFER_CREDIT;
-	}
 }

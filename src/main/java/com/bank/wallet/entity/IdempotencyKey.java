@@ -12,7 +12,6 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.OffsetDateTime;
-import java.util.Map;
 
 @Table(name = "idempotency_keys")
 @Data
@@ -41,7 +40,7 @@ public class IdempotencyKey {
 	private Integer responseStatus;
 
 	@Column("response_body")
-	private Map<String, Object> responseBody;
+	private String responseBody;
 
 	@CreatedDate
 	@Column("first_seen_at")
