@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: wallet
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wallet
+    username: wallet_user
+    password: wallet_password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
+  cache:
+    type: simple
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yml
+
+server:
+  port: 8081
+  servlet:
+    context-path: /wallet-api
+
+wallet:
+  app:
+    name: Wallet Bank API
+    version: 1.0.0
+    description: REST API for wallet banking operations including account management and transactions
+    server:
+      url: http://localhost:8081/wallet-api
+      description: Local Development Server
+    api-docs:
+      enabled: ${API_DOCS_ENABLED:true}
+      title: Wallet Bank API
+      description: Comprehensive REST API for wallet banking operations
+      version: 1.0.0
+      contact:
+        name: Tales Kerschner
+        email: taleskerschner@hotmail.com
+        url: https://github.com/Tales-K/wallet-api
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: ${wallet.app.api-docs.enabled}
+    tags-sorter: alpha
+    operations-sorter: method
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${wallet.app.name}
+    description: ${wallet.app.description}
+    version: ${wallet.app.version}
+  java:
+    version: ${java.version}
+
+logging:
+  level:
+    com.bank.wallet: DEBUG
+    org.springframework.web: INFO
+    org.springframework.jdbc: INFO
+    org.springframework.jdbc.core: DEBUG
+    org.springframework.jdbc.datasource: DEBUG
+    org.hibernate: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type: WARN
+    org.hibernate.jpa: WARN
+    org.hibernate.engine: WARN
+    com.zaxxer.hikari: DEBUG
+    com.zaxxer.hikari.HikariConfig: DEBUG
+    liquibase: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
