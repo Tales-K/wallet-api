@@ -1,9 +1,7 @@
-package com.bank.wallet.controller;
+package com.bank.wallet.controller.monitoring;
 
-import com.bank.wallet.config.WalletProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,25 +15,9 @@ import java.util.Map;
 @RequestMapping("/api/v1/wallet")
 @Slf4j
 @RequiredArgsConstructor
-public class WalletController implements WalletApi {
+public class MonitoringController implements MonitoringApi {
 
 	private final DataSource dataSource;
-	private final WalletProperties walletProperties;
-	private final Environment environment;
-
-	@Override
-	public ResponseEntity<Map<String, Object>> getWalletStatus() {
-		log.info("Wallet status requested at {}", LocalDateTime.now());
-
-		Map<String, Object> status = Map.of(
-			"service", "wallet-api",
-			"status", "UP",
-			"timestamp", LocalDateTime.now(),
-			"version", walletProperties.getApp().getVersion()
-		);
-
-		return ResponseEntity.ok(status);
-	}
 
 	@Override
 	public ResponseEntity<Map<String, Object>> health() {
@@ -64,7 +46,7 @@ public class WalletController implements WalletApi {
 
 	private boolean checkDatabaseHealth() {
 		try (Connection connection = dataSource.getConnection()) {
-			return connection.isValid(2); // 2 second timeout
+			return connection.isValid(1); // timeout limit in seconds
 		} catch (Exception e) {
 			log.error("Database health check failed", e);
 			return false;

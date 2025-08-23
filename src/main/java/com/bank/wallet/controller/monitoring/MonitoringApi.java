@@ -1,4 +1,4 @@
-package com.bank.wallet.controller;
+package com.bank.wallet.controller.monitoring;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,22 +9,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.Map;
 
-@Tag(name = "Wallet", description = "Wallet management operations")
-public interface WalletApi {
-
-	@Operation(
-		summary = "Get wallet status",
-		description = "Returns the current status of the wallet service"
-	)
-	@ApiResponses(value = {
-		@ApiResponse(responseCode = "200", description = "Wallet status retrieved successfully")
-	})
-	@GetMapping("/status")
-	ResponseEntity<Map<String, Object>> getWalletStatus();
+@Tag(name = "Monitoring", description = "Monitoring")
+public interface MonitoringApi {
 
 	@Operation(
 		summary = "Health check",
-		description = "Comprehensive health check endpoint for wallet service including database connectivity"
+		description = "Comprehensive health check endpoint including database connectivity"
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", description = "Service is healthy"),

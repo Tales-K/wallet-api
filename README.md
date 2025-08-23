@@ -1,5 +1,10 @@
 # Wallet Service (Java) - Mission-Critical, Auditable, Horizontally Scalable
 
+
+# Swagger UI
+
+- http://localhost:8081/wallet-api/swagger-ui/index.html
+
 This service manages user wallets with operations to create wallets, retrieve balances (current and historical), and
 post deposits, withdrawals, and transfers. It is designed to run multiple stateless instances concurrently without
 distributed locks, while preventing duplicates and preserving a complete audit trail.
