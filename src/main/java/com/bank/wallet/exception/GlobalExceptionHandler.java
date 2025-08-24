@@ -21,12 +21,6 @@ public class GlobalExceptionHandler {
 
 	private final IdempotencyService idempotencyService;
 
-	private void cacheFailed(HttpServletRequest request, HttpStatus status, ErrorResponseDto body) {
-		var key = request.getHeader("Idempotency-Key");
-		if (key == null || key.isBlank()) return;
-		idempotencyService.markCompleted(key, status.value(), body);
-	}
-
 	@ExceptionHandler(WalletNotFoundException.class)
 	public ResponseEntity<ErrorResponseDto> handleWalletNotFound(WalletNotFoundException ex, HttpServletRequest request) {
 		log.warn("Wallet not found: {}", ex.getMessage());
@@ -103,17 +97,6 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 	}
 
-	@ExceptionHandler(MissingIdempotencyKeyException.class)
-	public ResponseEntity<ErrorResponseDto> handleMissingIdempotencyKey(MissingIdempotencyKeyException ex) {
-		log.warn("Missing idempotency key: {}", ex.getMessage());
-		var error = ErrorResponseDto.builder()
-			.code("MISSING_IDEMPOTENCY_KEY")
-			.message(ex.getMessage())
-			.timestamp(OffsetDateTime.now())
-			.build();
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-	}
-
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponseDto> handleGeneral(Exception ex, HttpServletRequest request) {
 		log.error("Unexpected error", ex);
@@ -125,9 +108,10 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
 	}
 
-	public static class MissingIdempotencyKeyException extends RuntimeException {
-		public MissingIdempotencyKeyException(String message) {
-			super(message);
-		}
+	private void cacheFailed(HttpServletRequest request, HttpStatus status, ErrorResponseDto body) {
+		var key = request.getHeader("Idempotency-Key");
+		if (key == null || key.isBlank()) return;
+		idempotencyService.markCompleted(key, status.value(), body);
 	}
+
 }

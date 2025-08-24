@@ -15,40 +15,33 @@ import java.util.UUID;
 @Slf4j
 public class LedgerService {
 
-	private final LedgerEntryRepository ledgerEntryRepository;
-	private final LedgerValidator ledgerValidator;
+    private final LedgerEntryRepository ledgerEntryRepository;
+    private final LedgerValidator ledgerValidator;
 
-	public void createDepositEntry(UUID txId, UUID walletId, BigDecimal amount) {
-		log.debug("Creating deposit ledger entry: txId={}, walletId={}, amount={}", txId, walletId, amount);
+    public void createDepositEntry(UUID txId, UUID walletId, BigDecimal amount) {
+        log.debug("Creating deposit ledger entry: txId={}, walletId={}, amount={}", txId, walletId, amount);
+        var entry = LedgerEntry.builder()
+            .txId(txId)
+            .walletId(walletId)
+            .amount(amount)
+            .postingType(PostingType.DEPOSIT)
+            .build();
+        ledgerValidator.validate(entry);
+        ledgerEntryRepository.insertDeposit(txId, walletId, amount);
+        log.debug("Deposit ledger entry created successfully: {}", txId);
+    }
 
-		var ledgerEntry = LedgerEntry.builder()
-			.txId(txId)
-			.walletId(walletId)
-			.amount(amount) // Positive for deposit
-			.postingType(PostingType.DEPOSIT)
-			.build();
-
-		saveLedgeEntry(ledgerEntry);
-		log.debug("Deposit ledger entry created successfully: {}", txId);
-	}
-
-	public void createWithdrawEntry(UUID txId, UUID walletId, BigDecimal amount) {
-		log.debug("Creating withdraw ledger entry: txId={}, walletId={}, amount={}", txId, walletId, amount);
-
-		var ledgerEntry = LedgerEntry.builder()
-			.txId(txId)
-			.walletId(walletId)
-			.amount(amount.negate()) // Negative for withdrawal
-			.postingType(PostingType.WITHDRAW)
-			.build();
-
-		saveLedgeEntry(ledgerEntry);
-		log.debug("Withdraw ledger entry created successfully: {}", txId);
-	}
-
-	private void saveLedgeEntry(LedgerEntry ledgerEntry) {
-		ledgerValidator.validate(ledgerEntry);
-		ledgerEntryRepository.save(ledgerEntry);
-	}
-
+    public void createWithdrawEntry(UUID txId, UUID walletId, BigDecimal amount) {
+        log.debug("Creating withdraw ledger entry: txId={}, walletId={}, amount={}", txId, walletId, amount);
+        var negative = amount.negate();
+        var entry = LedgerEntry.builder()
+            .txId(txId)
+            .walletId(walletId)
+            .amount(negative)
+            .postingType(PostingType.WITHDRAW)
+            .build();
+        ledgerValidator.validate(entry);
+        ledgerEntryRepository.insertWithdraw(txId, walletId, negative);
+        log.debug("Withdraw ledger entry created successfully: {}", txId);
+    }
 }

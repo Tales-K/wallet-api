@@ -18,8 +18,8 @@ import java.math.BigDecimal;
 public class TransactionRequestDto {
 
     @NotNull(message = "Amount is required")
-    @DecimalMin(value = "0.0001", message = "Amount must be greater than zero")
-    @DecimalMax(value = "9999999999999999.9999", message = "Amount exceeds maximum allowed")
-    @Digits(integer = 15, fraction = 4, message = "Amount must have at most 4 decimal places")
+    @DecimalMin(value = "0.01", message = "Amount must be at least 0.01")
+    @DecimalMax(value = "9999999999999999.99", message = "Amount exceeds maximum allowed")
+    @Digits(integer = 15, fraction = 2, message = "Amount must have at most 2 decimal places")
     private BigDecimal amount;
 }

@@ -12,25 +12,25 @@ import java.util.Optional;
 @Repository
 public interface IdempotencyKeyRepository extends CrudRepository<IdempotencyKey, String> {
 
-	@Query("SELECT * FROM idempotency_keys WHERE idempotency_key = :key")
+	@Query("SELECT idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, (response_body::text) as response_body, first_seen_at, last_seen_at FROM idempotency_keys WHERE idempotency_key = :key")
 	Optional<IdempotencyKey> findByIdempotencyKey(@Param("key") String key);
 
 	@Modifying
 	@Query("""
 		INSERT INTO idempotency_keys (idempotency_key, method, path, request_hash, status, response_status, response_body, first_seen_at, last_seen_at)
 		VALUES (:key, :method, :path, :requestHash, 'in_progress', NULL, NULL, now(), now())
+		ON CONFLICT (idempotency_key) DO NOTHING
 		""")
-	void insertNew(@Param("key") String key,
-				   @Param("method") String method,
-				   @Param("path") String path,
-				   @Param("requestHash") String requestHash);
+	int insertNew(@Param("key") String key,
+				  @Param("method") String method,
+				  @Param("path") String path,
+				  @Param("requestHash") String requestHash);
 
 	@Modifying
 	@Query("""
 		UPDATE idempotency_keys
 		SET status = 'completed', response_status = :responseStatus, response_body = :responseBody::jsonb, last_seen_at = now()
-		WHERE idempotency_key = :key
-		  AND status = 'in_progress'
+		WHERE idempotency_key = :key AND status = 'in_progress'
 		""")
 	int markCompleted(@Param("key") String key, @Param("responseStatus") int responseStatus, @Param("responseBody") String responseBody);
 

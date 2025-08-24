@@ -9,7 +9,6 @@ import com.bank.wallet.util.ContextUtils;
 import com.bank.wallet.util.SerializationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -30,14 +29,11 @@ public class IdempotencyService {
 		var method = contextUtils.getCurrentRequestMethod();
 		var path = contextUtils.getCurrentRequestPath();
 		var requestHash = contextUtils.generateRequestHash(method, path, requestDto);
-		try {
-			idempotencyKeyRepository.insertNew(idempotencyKey, method, path, requestHash);
-			return null;
-		} catch (DuplicateKeyException e) {
-			var existing = idempotencyKeyRepository.findByIdempotencyKey(idempotencyKey)
-				.orElseThrow(() -> new RuntimeException("Idempotency key not found after conflict"));
-			return handleExisting(existing, requestHash);
-		}
+		var inserted = idempotencyKeyRepository.insertNew(idempotencyKey, method, path, requestHash);
+		if (inserted == 1) return null; // brand new key
+		var existing = idempotencyKeyRepository.findByIdempotencyKey(idempotencyKey)
+			.orElseThrow(() -> new RuntimeException("Idempotency key not found after conflict"));
+		return handleExisting(existing, requestHash);
 	}
 
 	private ResponseEntity<String> handleExisting(IdempotencyKey existingKey, String requestHash) {
@@ -64,14 +60,14 @@ public class IdempotencyService {
 
 	public String markCompleted(String idempotencyKey, int httpStatus, Object responseDto) {
 		try {
-			var canonical = serializationUtils.canonicalJson(responseDto);
-			var updated = idempotencyKeyRepository.markCompleted(idempotencyKey, httpStatus, canonical);
+			var json = serializationUtils.toJson(responseDto);
+			var updated = idempotencyKeyRepository.markCompleted(idempotencyKey, httpStatus, json);
 			if (updated != 1) {
 				log.error("Failed state transition to COMPLETED for key {} (updated={})", idempotencyKey, updated);
 				throw new IllegalStateException("Idempotency key not in in_progress state");
 			}
 			log.debug("Idempotency key '{}' marked as COMPLETED", idempotencyKey);
-			return canonical;
+			return json;
 		} catch (Exception e) {
 			log.error("Failed to mark COMPLETED for key {}", idempotencyKey, e);
 			throw new RuntimeException("Failed to update idempotency status", e);

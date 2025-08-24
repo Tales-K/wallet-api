@@ -84,8 +84,8 @@ logging:
     org.hibernate.type: WARN
     org.hibernate.jpa: WARN
     org.hibernate.engine: WARN
-    com.zaxxer.hikari: DEBUG
-    com.zaxxer.hikari.HikariConfig: DEBUG
+    com.zaxxer.hikari: OFF
+    com.zaxxer.hikari.HikariConfig: OFF
     liquibase: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
