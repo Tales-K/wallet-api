@@ -1,5 +1,6 @@
 package com.bank.wallet.service;
 
+import com.bank.wallet.config.WalletProperties;
 import com.bank.wallet.entity.IdempotencyKey;
 import com.bank.wallet.entity.enums.IdempotencyStatus;
 import com.bank.wallet.exception.IdempotencyConflictException;
@@ -11,13 +12,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static com.bank.wallet.entity.enums.IdempotencyStatus.SUCCEEDED;
-import static com.bank.wallet.service.IdempotencyService.STALE_THRESHOLD_SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,6 +35,8 @@ class IdempotencyServiceTest {
 	private ContextUtils contextUtils;
 	@Mock
 	private SerializationUtils serializationUtils;
+	@Spy
+	private WalletProperties walletProperties = new WalletProperties();
 	@InjectMocks
 	private IdempotencyService service;
 
@@ -75,12 +78,13 @@ class IdempotencyServiceTest {
 		var key = UUID.randomUUID();
 		var existing = IdempotencyKey.builder().idempotencyKey(key).status(IdempotencyStatus.IN_PROGRESS).requestHash(requestHash).refId(UUID.randomUUID()).build();
 		var takeover = IdempotencyKey.builder().idempotencyKey(key).status(IdempotencyStatus.IN_PROGRESS).requestHash(requestHash).refId(UUID.randomUUID()).build();
+		var stale = walletProperties.getIdempotency().getStaleThresholdSeconds();
 		when(contextUtils.getCurrentRequestMethod()).thenReturn(method);
 		when(contextUtils.getCurrentRequestPath()).thenReturn(path);
 		when(contextUtils.generateRequestHash(eq(method), eq(path), any())).thenReturn(requestHash);
 		when(repository.tryInsertWithRef(eq(key), eq(method), eq(path), eq(requestHash), any())).thenReturn(Optional.empty());
 		when(repository.findByIdempotencyKeyAndRequestHash(key, requestHash)).thenReturn(Optional.of(existing));
-		when(repository.tryTakeOverReturning(key, STALE_THRESHOLD_SECONDS)).thenReturn(Optional.of(takeover));
+		when(repository.tryTakeOverReturning(key, stale)).thenReturn(Optional.of(takeover));
 		// act
 		var result = service.claim(key, new Object());
 		// assert
@@ -92,12 +96,13 @@ class IdempotencyServiceTest {
 		// arrange
 		var key = UUID.randomUUID();
 		var existing = IdempotencyKey.builder().idempotencyKey(key).status(IdempotencyStatus.IN_PROGRESS).requestHash(requestHash).refId(UUID.randomUUID()).build();
+		var stale = walletProperties.getIdempotency().getStaleThresholdSeconds();
 		when(contextUtils.getCurrentRequestMethod()).thenReturn(method);
 		when(contextUtils.getCurrentRequestPath()).thenReturn(path);
 		when(contextUtils.generateRequestHash(eq(method), eq(path), any())).thenReturn(requestHash);
 		when(repository.tryInsertWithRef(eq(key), eq(method), eq(path), eq(requestHash), any())).thenReturn(Optional.empty());
 		when(repository.findByIdempotencyKeyAndRequestHash(key, requestHash)).thenReturn(Optional.of(existing));
-		when(repository.tryTakeOverReturning(key, STALE_THRESHOLD_SECONDS)).thenReturn(Optional.empty());
+		when(repository.tryTakeOverReturning(key, stale)).thenReturn(Optional.empty());
 		// act & assert
 		assertThrows(IdempotencyInProgressException.class, () -> service.claim(key, new Object()));
 	}

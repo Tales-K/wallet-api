@@ -1,5 +1,6 @@
 package com.bank.wallet.service;
 
+import com.bank.wallet.config.WalletProperties;
 import com.bank.wallet.entity.IdempotencyKey;
 import com.bank.wallet.entity.enums.IdempotencyStatus;
 import com.bank.wallet.exception.IdempotencyConflictException;
@@ -24,7 +25,7 @@ public class IdempotencyService {
 	private final IdempotencyKeyRepository idempotencyKeyRepository;
 	private final ContextUtils contextUtils;
 	private final SerializationUtils serializationUtils;
-	protected static final int STALE_THRESHOLD_SECONDS = 30;
+	private final WalletProperties walletProperties;
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public IdempotencyKey claim(UUID idempotencyKey, Object requestDto) {
@@ -32,6 +33,7 @@ public class IdempotencyService {
 		var path = contextUtils.getCurrentRequestPath();
 		var requestHash = contextUtils.generateRequestHash(method, path, requestDto);
 		var refId = UUID.randomUUID();
+		var staleSeconds = walletProperties.getIdempotency().getStaleThresholdSeconds();
 
 		var inserted = idempotencyKeyRepository.tryInsertWithRef(idempotencyKey, contextUtils.getCurrentRequestMethod(), contextUtils.getCurrentRequestPath(), requestHash, refId);
 		if (inserted.isPresent()) return inserted.get();
@@ -42,7 +44,7 @@ public class IdempotencyService {
 
 		// if in progress, try to take over if stale
 		if (existing.getStatus() == IdempotencyStatus.IN_PROGRESS) {
-			var taken = idempotencyKeyRepository.tryTakeOverReturning(idempotencyKey, STALE_THRESHOLD_SECONDS);
+			var taken = idempotencyKeyRepository.tryTakeOverReturning(idempotencyKey, staleSeconds);
 			if (taken.isPresent()) return taken.get();
 			throw new IdempotencyInProgressException("Request is being processed by another instance");
 		}

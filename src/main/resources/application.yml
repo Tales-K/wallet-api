@@ -40,6 +40,8 @@ wallet:
         name: Tales Kerschner
         email: taleskerschner@hotmail.com
         url: https://github.com/Tales-K/wallet-api
+  idempotency:
+    stale-threshold-seconds: 5
 
 springdoc:
   api-docs:

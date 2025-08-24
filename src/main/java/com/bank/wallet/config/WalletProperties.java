@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class WalletProperties {
 
     private App app = new App();
+    private Idempotency idempotency = new Idempotency();
 
     @Data
     public static class App {
@@ -40,5 +41,10 @@ public class WalletProperties {
         private String name;
         private String email;
         private String url;
+    }
+
+    @Data
+    public static class Idempotency {
+        private int staleThresholdSeconds = 5;
     }
 }
