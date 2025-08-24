@@ -1,4 +1,4 @@
-package com.bank.wallet.service;
+package com.bank.wallet.validator;
 
 import org.springframework.stereotype.Component;
 

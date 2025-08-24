@@ -1,6 +1,8 @@
 package com.bank.wallet.service;
 
 import com.bank.wallet.dto.transfer.TransferRequestDto;
+import com.bank.wallet.validator.TransactionValidator;
+import com.bank.wallet.validator.TransferValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

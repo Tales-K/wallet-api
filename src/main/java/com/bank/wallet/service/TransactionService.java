@@ -1,7 +1,7 @@
 package com.bank.wallet.service;
 
 import com.bank.wallet.dto.wallet.TransactionRequestDto;
-import com.bank.wallet.entity.IdempotencyKey;
+import com.bank.wallet.validator.TransactionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

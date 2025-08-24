@@ -1,4 +1,4 @@
-package com.bank.wallet.service;
+package com.bank.wallet.validator;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

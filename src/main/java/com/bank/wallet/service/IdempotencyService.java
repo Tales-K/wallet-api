@@ -24,7 +24,7 @@ public class IdempotencyService {
 	private final IdempotencyKeyRepository idempotencyKeyRepository;
 	private final ContextUtils contextUtils;
 	private final SerializationUtils serializationUtils;
-	private static final int STALE_THRESHOLD_SECONDS = 30;
+	protected static final int STALE_THRESHOLD_SECONDS = 30;
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public IdempotencyKey claim(UUID idempotencyKey, Object requestDto) {
@@ -68,6 +68,8 @@ public class IdempotencyService {
 				throw new IllegalStateException("Idempotency key not in in_progress state or hash mismatch");
 			}
 			return json;
+		} catch (IllegalStateException e) {
+			throw e;
 		} catch (Exception e) {
 			log.error("Failed to mark {} for key {}", status, key.getIdempotencyKey(), e);
 			throw new RuntimeException("Failed to update idempotency status", e);

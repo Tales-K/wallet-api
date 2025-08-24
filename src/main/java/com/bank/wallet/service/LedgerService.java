@@ -4,6 +4,7 @@ import com.bank.wallet.entity.LedgerEntry;
 import com.bank.wallet.entity.enums.PostingType;
 import com.bank.wallet.mapper.LedgerMapper;
 import com.bank.wallet.repository.LedgerEntryRepository;
+import com.bank.wallet.validator.LedgerValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

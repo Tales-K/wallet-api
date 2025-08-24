@@ -1,4 +1,4 @@
-package com.bank.wallet.service;
+package com.bank.wallet.validator;
 
 import com.bank.wallet.entity.LedgerEntry;
 import com.bank.wallet.entity.enums.PostingType;

@@ -1,12 +1,16 @@
 package com.bank.wallet.service;
 
+import com.bank.wallet.validator.WalletValidator;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ExtendWith(MockitoExtension.class)
 class WalletValidatorTest {
 	private final WalletValidator validator = new WalletValidator();
 
