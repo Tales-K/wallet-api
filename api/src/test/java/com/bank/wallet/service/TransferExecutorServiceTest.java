@@ -3,6 +3,7 @@ package com.bank.wallet.service;
 import com.bank.wallet.dto.transfer.TransferRequestDto;
 import com.bank.wallet.entity.IdempotencyKey;
 import com.bank.wallet.entity.enums.IdempotencyStatus;
+import com.bank.wallet.exception.InsufficientFundsException;
 import com.bank.wallet.mapper.TransferMapper;
 import com.bank.wallet.repository.TransferRepository;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,4 +72,19 @@ class TransferExecutorServiceTest {
 		// act & assert
 		assertThrows(IllegalStateException.class, () -> executorService.execute(key, req));
 	}
+
+	@Test
+	void execute_throwsInsufficientFundsException() {
+		// arrange
+		var key = IdempotencyKey.builder().idempotencyKey(UUID.randomUUID()).refId(UUID.randomUUID()).status(IdempotencyStatus.IN_PROGRESS).build();
+		var from = UUID.randomUUID();
+		var to = UUID.randomUUID();
+		var amount = new BigDecimal("42.555");
+		var req = TransferRequestDto.builder().fromWalletId(from).toWalletId(to).amount(amount).build();
+		var ex = mock(InsufficientFundsException.class);
+		when(walletService.withdrawAndGetNewBalance(key, from, amount)).thenThrow(ex);
+		// act & assert
+		assertThrows(InsufficientFundsException.class, () -> executorService.execute(key, req));
+	}
+
 }
