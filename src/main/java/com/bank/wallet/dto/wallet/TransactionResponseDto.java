@@ -14,10 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class TransactionResponseDto implements Serializable {
-
-	private UUID txId;
-
+	private UUID transactionId;
 	private UUID walletId;
-
 	private BigDecimal newBalance;
 }

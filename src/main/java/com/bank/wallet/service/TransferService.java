@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -16,12 +18,12 @@ public class TransferService {
 	private final TransactionValidator transactionValidator;
 	private final TransferValidator transferValidator;
 
-	public ResponseEntity<String> create(TransferRequestDto request, String idempotencyKey) {
+	public ResponseEntity<String> create(TransferRequestDto request, UUID idempotencyKey) {
 		transactionValidator.validateIdempotencyKey(idempotencyKey);
-		transferValidator.validate(request);
-		var claim = idempotencyService.claim(idempotencyKey, request);
-		if (claim.cachedResponse() != null) return claim.cachedResponse();
-		var transferId = claim.refId();
-		return transferExecutorService.execute(idempotencyKey, transferId, request);
+		var key = idempotencyService.claim(idempotencyKey, request);
+		transferValidator.validate(request, key);
+		if (idempotencyService.isReplay(key)) return idempotencyService.buildReplayResponse(key);
+		return transferExecutorService.execute(key, request);
 	}
+
 }

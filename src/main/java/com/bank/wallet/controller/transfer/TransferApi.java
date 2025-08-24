@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 
+import java.util.UUID;
+
 @Tag(name = "Transfers", description = "Wallet to wallet transfer operations")
 public interface TransferApi {
 
@@ -23,6 +25,6 @@ public interface TransferApi {
 	})
 	ResponseEntity<String> createTransfer(
 		@Valid TransferRequestDto request,
-		@Parameter(required = true) String idempotencyKey
+		@Parameter(required = true) UUID idempotencyKey
 	);
 }

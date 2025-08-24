@@ -1,7 +1,7 @@
 package com.bank.wallet.controller.wallet;
 
 import com.bank.wallet.dto.wallet.TransactionRequestDto;
-import com.bank.wallet.dto.wallet.WalletResponse;
+import com.bank.wallet.dto.wallet.WalletResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,7 +29,7 @@ public interface WalletApi {
 		@ApiResponse(responseCode = "500", description = "Internal server error")
 	})
 	@PostMapping
-	WalletResponse createWallet();
+	WalletResponseDto createWallet();
 
 	@Operation(
 		summary = "Get wallet by ID",
@@ -41,7 +41,7 @@ public interface WalletApi {
 		@ApiResponse(responseCode = "400", description = "Invalid wallet ID format")
 	})
 	@GetMapping("/{walletId}")
-	WalletResponse getWallet(@PathVariable UUID walletId);
+	WalletResponseDto getWallet(@PathVariable UUID walletId);
 
 	@Operation(
 		summary = "Deposit funds to wallet",
@@ -59,7 +59,7 @@ public interface WalletApi {
 		@PathVariable UUID walletId,
 		@Valid @RequestBody TransactionRequestDto request,
 		@Parameter(description = "Idempotency key for safe retries", required = true)
-		@RequestHeader("Idempotency-Key") String idempotencyKey
+		@RequestHeader("Idempotency-Key") UUID idempotencyKey
 	);
 
 	@Operation(
@@ -78,6 +78,6 @@ public interface WalletApi {
 		@PathVariable UUID walletId,
 		@Valid @RequestBody TransactionRequestDto request,
 		@Parameter(description = "Idempotency key for safe retries", required = true)
-		@RequestHeader("Idempotency-Key") String idempotencyKey
+		@RequestHeader("Idempotency-Key") UUID idempotencyKey
 	);
 }

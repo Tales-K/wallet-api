@@ -1,6 +1,7 @@
 package com.bank.wallet.service;
 
 import com.bank.wallet.dto.transfer.TransferRequestDto;
+import com.bank.wallet.entity.IdempotencyKey;
 import com.bank.wallet.entity.enums.IdempotencyStatus;
 import com.bank.wallet.mapper.TransferMapper;
 import com.bank.wallet.repository.TransferRepository;
@@ -9,8 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,13 +23,14 @@ public class TransferExecutorService {
 	private final TransferRepository transferRepository;
 
 	@Transactional
-	public ResponseEntity<String> execute(String idempotencyKey, UUID transferId, TransferRequestDto request) {
+	public ResponseEntity<String> execute(IdempotencyKey idempotencyKey, TransferRequestDto request) {
+		var transferId = idempotencyKey.getRefId();
 		var amount = request.getAmount();
 		var from = request.getFromWalletId();
 		var to = request.getToWalletId();
 
-		walletService.withdrawAndGetNewBalance(from, amount);
-		walletService.depositAndGetNewBalance(to, amount);
+		walletService.withdrawAndGetNewBalance(idempotencyKey, from, amount);
+		walletService.depositAndGetNewBalance(idempotencyKey, to, amount);
 
 		ledgerService.createTransferDebitEntry(transferId, from, amount);
 		ledgerService.createTransferCreditEntry(transferId, to, amount);

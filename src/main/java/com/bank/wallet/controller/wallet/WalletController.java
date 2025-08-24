@@ -1,7 +1,7 @@
 package com.bank.wallet.controller.wallet;
 
 import com.bank.wallet.dto.wallet.TransactionRequestDto;
-import com.bank.wallet.dto.wallet.WalletResponse;
+import com.bank.wallet.dto.wallet.WalletResponseDto;
 import com.bank.wallet.service.TransactionService;
 import com.bank.wallet.service.WalletService;
 import jakarta.validation.Valid;
@@ -33,25 +33,33 @@ public class WalletController implements WalletApi {
 	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public WalletResponse createWallet() {
+	public WalletResponseDto createWallet() {
 		return walletService.createWallet();
 	}
 
 	@Override
 	@GetMapping("/{walletId}")
-	public WalletResponse getWallet(@PathVariable UUID walletId) {
+	public WalletResponseDto getWallet(@PathVariable UUID walletId) {
 		return walletService.getWallet(walletId);
 	}
 
 	@Override
 	@PostMapping("/{walletId}/deposit")
-	public ResponseEntity<String> deposit(@PathVariable UUID walletId, @Valid @RequestBody TransactionRequestDto request, @RequestHeader("Idempotency-Key") String idempotencyKey) {
+	public ResponseEntity<String> deposit(
+		@PathVariable UUID walletId,
+		@Valid @RequestBody TransactionRequestDto request,
+		@RequestHeader("Idempotency-Key") UUID idempotencyKey
+	) {
 		return transactionService.deposit(walletId, request, idempotencyKey);
 	}
 
 	@Override
 	@PostMapping("/{walletId}/withdraw")
-	public ResponseEntity<String> withdraw(@PathVariable UUID walletId, @Valid @RequestBody TransactionRequestDto request, @RequestHeader("Idempotency-Key") String idempotencyKey) {
+	public ResponseEntity<String> withdraw(
+		@PathVariable UUID walletId,
+		@Valid @RequestBody TransactionRequestDto request,
+		@RequestHeader("Idempotency-Key") UUID idempotencyKey
+	) {
 		return transactionService.withdraw(walletId, request, idempotencyKey);
 	}
 }

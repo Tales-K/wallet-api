@@ -1,6 +1,10 @@
 package com.bank.wallet.exception;
 
-public class SemanticValidationException extends RuntimeException {
-	public SemanticValidationException(String message) { super(message); }
+import com.bank.wallet.entity.IdempotencyKey;
+
+public class SemanticValidationException extends TransactionRuntimeException {
+	public SemanticValidationException(String message, IdempotencyKey idempotencyKey) {
+		super(message, idempotencyKey);
+	}
 }
 

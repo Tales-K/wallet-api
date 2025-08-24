@@ -13,13 +13,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WalletResponse {
-
+public class WalletResponseDto {
 	private UUID walletId;
-
 	private BigDecimal currentBalance;
-
 	private OffsetDateTime createdAt;
-
 	private OffsetDateTime updatedAt;
 }

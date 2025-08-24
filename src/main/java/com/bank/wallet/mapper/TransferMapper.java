@@ -10,7 +10,7 @@ import java.util.UUID;
 public class TransferMapper {
 	public TransferResponseDto toResponse(UUID transferId, UUID fromWalletId, UUID toWalletId, BigDecimal amount) {
 		return TransferResponseDto.builder()
-			.transferId(transferId)
+			.transactionId(transferId)
 			.fromWalletId(fromWalletId)
 			.toWalletId(toWalletId)
 			.amount(amount)

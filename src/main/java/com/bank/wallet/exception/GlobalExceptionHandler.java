@@ -22,109 +22,102 @@ public class GlobalExceptionHandler {
 
 	private final IdempotencyService idempotencyService;
 
+	/* cached idempotent exceptions */
 	@ExceptionHandler(WalletNotFoundException.class)
 	public ResponseEntity<ErrorResponseDto> handleWalletNotFound(WalletNotFoundException ex, HttpServletRequest request) {
 		log.warn("Wallet not found: {}", ex.getMessage());
-		var error = ErrorResponseDto.builder()
-			.code("WALLET_NOT_FOUND")
-			.message(ex.getMessage())
-			.timestamp(OffsetDateTime.now())
-			.build();
-		cacheFailed(request, HttpStatus.NOT_FOUND, error);
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+		return handleIdempotencyCachedError(ex, HttpStatus.NOT_FOUND, "WALLET_NOT_FOUND", null);
 	}
 
 	@ExceptionHandler(InsufficientFundsException.class)
 	public ResponseEntity<ErrorResponseDto> handleInsufficientFunds(InsufficientFundsException ex, HttpServletRequest request) {
 		log.warn("Insufficient funds: {}", ex.getMessage());
-		var error = ErrorResponseDto.builder()
-			.code("INSUFFICIENT_FUNDS")
-			.message(ex.getMessage())
-			.timestamp(OffsetDateTime.now())
-			.details(Map.of(
-				"walletId", ex.getWalletId().toString(),
-				"attemptedAmount", ex.getAttemptedAmount().toString()
-			))
-			.build();
-		cacheFailed(request, HttpStatus.CONFLICT, error);
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+		var details = Map.<String, Object>of(
+			"walletId", ex.getWalletId().toString(),
+			"attemptedAmount", ex.getAttemptedAmount().toString()
+		);
+		return handleIdempotencyCachedError(ex, HttpStatus.CONFLICT, "INSUFFICIENT_FUNDS", details);
 	}
 
+	@ExceptionHandler(SemanticValidationException.class)
+	public ResponseEntity<ErrorResponseDto> handleSemantic(SemanticValidationException ex, HttpServletRequest request) {
+		log.warn("Semantic validation error: {}", ex.getMessage());
+		return handleIdempotencyCachedError(ex, HttpStatus.UNPROCESSABLE_ENTITY, "SEMANTIC_ERROR", null);
+	}
+
+	/* non-cached idempotency exceptions */
 	@ExceptionHandler(IdempotencyConflictException.class)
 	public ResponseEntity<ErrorResponseDto> handleIdempotencyConflict(IdempotencyConflictException ex, HttpServletRequest request) {
 		log.warn("Idempotency conflict: {}", ex.getMessage());
-		var error = ErrorResponseDto.builder()
+		var body = ErrorResponseDto.builder()
 			.code(ex.getCode())
 			.message(ex.getMessage())
 			.timestamp(OffsetDateTime.now())
 			.build();
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
 	}
 
 	@ExceptionHandler(IdempotencyInProgressException.class)
 	public ResponseEntity<ErrorResponseDto> handleIdempotencyInProgress(IdempotencyInProgressException ex, HttpServletRequest request) {
 		log.warn("Idempotency in progress: {}", ex.getMessage());
-		var error = ErrorResponseDto.builder()
+		var body = ErrorResponseDto.builder()
 			.code("IDEMPOTENCY_IN_PROGRESS")
 			.message(ex.getMessage())
 			.timestamp(OffsetDateTime.now())
 			.build();
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
 	}
 
+	/* business exceptions */
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<ErrorResponseDto> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
 		log.warn("Invalid argument: {}", ex.getMessage());
-		var error = ErrorResponseDto.builder()
+		var body = ErrorResponseDto.builder()
 			.code("INVALID_REQUEST")
 			.message(ex.getMessage())
 			.timestamp(OffsetDateTime.now())
 			.build();
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponseDto> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
 		log.warn("Validation error: {}", ex.getMessage());
 		var message = new StringBuilder("Validation failed: ");
-		ex.getBindingResult().getFieldErrors().forEach(error ->
-			message.append(error.getField()).append(" ").append(error.getDefaultMessage()).append("; ")
-		);
-		var error = ErrorResponseDto.builder()
+		ex.getBindingResult().getFieldErrors().forEach(err -> message.append(err.getField()).append(" ").append(err.getDefaultMessage()).append("; "));
+		var body = ErrorResponseDto.builder()
 			.code("VALIDATION_ERROR")
 			.message(message.toString())
 			.timestamp(OffsetDateTime.now())
 			.build();
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-	}
-
-	@ExceptionHandler(SemanticValidationException.class)
-	public ResponseEntity<ErrorResponseDto> handleSemantic(SemanticValidationException ex, HttpServletRequest request) {
-		log.warn("Semantic validation error: {}", ex.getMessage());
-		var error = ErrorResponseDto.builder()
-			.code("SEMANTIC_ERROR")
-			.message(ex.getMessage())
-			.timestamp(OffsetDateTime.now())
-			.build();
-		cacheFailed(request, HttpStatus.UNPROCESSABLE_ENTITY, error);
-		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponseDto> handleGeneral(Exception ex, HttpServletRequest request) {
 		log.error("Unexpected error", ex);
-		var error = ErrorResponseDto.builder()
+		var body = ErrorResponseDto.builder()
 			.code("INTERNAL_ERROR")
 			.message("An unexpected error occurred")
 			.timestamp(OffsetDateTime.now())
 			.build();
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
 	}
 
-	private void cacheFailed(HttpServletRequest request, HttpStatus status, ErrorResponseDto body) {
-		var key = request.getHeader("Idempotency-Key");
-		if (key == null || key.isBlank()) return;
-		idempotencyService.markCompleted(key, status.value(), body, IdempotencyStatus.FAILED);
+	private ResponseEntity<ErrorResponseDto> handleIdempotencyCachedError(TransactionRuntimeException ex, HttpStatus status, String code, Map<String, Object> details) {
+		var refId = ex.getIdempotencyKey() != null ? ex.getIdempotencyKey().getRefId() : null;
+		var body = ErrorResponseDto.builder()
+			.code(code)
+			.message(ex.getMessage())
+			.timestamp(OffsetDateTime.now())
+			.transactionIdentifier(refId)
+			.details(details)
+			.build();
+
+		if (ex.getIdempotencyKey() != null)
+			idempotencyService.markCompleted(ex.getIdempotencyKey(), status.value(), body, IdempotencyStatus.FAILED);
+
+		return ResponseEntity.status(status).body(body);
 	}
 
 }

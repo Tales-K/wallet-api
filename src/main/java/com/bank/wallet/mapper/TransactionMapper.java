@@ -11,7 +11,7 @@ public class TransactionMapper {
 
     public TransactionResponseDto toResponseDto(UUID txId, UUID walletId, BigDecimal newBalance) {
         return TransactionResponseDto.builder()
-            .txId(txId)
+            .transactionId(txId)
             .walletId(walletId)
             .newBalance(newBalance)
             .build();
