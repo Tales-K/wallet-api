@@ -29,11 +29,11 @@ public class TransferExecutorService {
 		var from = request.getFromWalletId();
 		var to = request.getToWalletId();
 
-		walletService.withdrawAndGetNewBalance(idempotencyKey, from, amount);
-		walletService.depositAndGetNewBalance(idempotencyKey, to, amount);
+		var fromNewBalance = walletService.withdrawAndGetNewBalance(idempotencyKey, from, amount);
+		var toNewBalance = walletService.depositAndGetNewBalance(idempotencyKey, to, amount);
 
-		ledgerService.createTransferDebitEntry(transferId, from, amount);
-		ledgerService.createTransferCreditEntry(transferId, to, amount);
+		ledgerService.createTransferDebitEntry(transferId, from, amount, fromNewBalance);
+		ledgerService.createTransferCreditEntry(transferId, to, amount, toNewBalance);
 		var rows = transferRepository.insertIfAbsent(transferId, from, to, amount);
 		if (rows != 1) {
 			log.error("Transfer insert failed transferId={} from={} to={} rows={}", transferId, from, to, rows);

@@ -8,3 +8,22 @@
   balancing.
 - Future cleanup schedules should be implemented to clean pending in_progress
   idempotency keys.
+- There are two ways of fetching balance history: by informing desired date and
+  time, and checking ledgers by time range filter.
+
+# Pending implementations
+
+- add current_balance at ledger records
+- retrieve balance by time
+- retrieve ledger by time range
+- create unit tests
+- create integration tests
+- add load balancer
+- create load tests
+
+# Utils
+
+```shell
+docker exec -it wallet-postgres psql -U wallet_user -d postgres -c "DROP DATABASE IF EXISTS wallet;"
+docker exec -it wallet-postgres psql -U wallet_user -d postgres -c "CREATE DATABASE wallet OWNER wallet_user;"
+```

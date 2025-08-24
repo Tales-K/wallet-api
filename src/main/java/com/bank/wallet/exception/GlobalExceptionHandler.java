@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -89,6 +90,25 @@ public class GlobalExceptionHandler {
 			.code("VALIDATION_ERROR")
 			.message(message.toString())
 			.timestamp(OffsetDateTime.now())
+			.build();
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ErrorResponseDto> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+		log.warn("Type mismatch: {}", ex.getMessage());
+		var requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "Unknown";
+		var details = Map.<String, Object>of(
+			"parameter", ex.getName(),
+			"receivedValue", String.valueOf(ex.getValue()),
+			"expectedType", requiredType
+		);
+		var message = ex.getMessage();
+		var body = ErrorResponseDto.builder()
+			.code("INVALID_FORMAT")
+			.message(message)
+			.timestamp(OffsetDateTime.now())
+			.details(details)
 			.build();
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}

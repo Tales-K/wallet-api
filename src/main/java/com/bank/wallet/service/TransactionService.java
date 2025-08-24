@@ -21,7 +21,7 @@ public class TransactionService {
 	public ResponseEntity<String> deposit(UUID walletId, TransactionRequestDto request, UUID idempotencyKey) {
 		validator.validateIdempotencyKey(idempotencyKey);
 		log.debug("Processing deposit for wallet: {}, amount: {}", walletId, request.getAmount());
-		IdempotencyKey keyEntity = idempotencyService.claim(idempotencyKey, request);
+		var keyEntity = idempotencyService.claim(idempotencyKey, request);
 		if (idempotencyService.isReplay(keyEntity)) return idempotencyService.buildReplayResponse(keyEntity);
 		return transactionExecutorService.deposit(keyEntity, walletId, request);
 	}
@@ -29,7 +29,7 @@ public class TransactionService {
 	public ResponseEntity<String> withdraw(UUID walletId, TransactionRequestDto request, UUID idempotencyKey) {
 		validator.validateIdempotencyKey(idempotencyKey);
 		log.debug("Processing withdrawal for wallet: {}, amount: {}", walletId, request.getAmount());
-		IdempotencyKey keyEntity = idempotencyService.claim(idempotencyKey, request);
+		var keyEntity = idempotencyService.claim(idempotencyKey, request);
 		if (idempotencyService.isReplay(keyEntity)) return idempotencyService.buildReplayResponse(keyEntity);
 		return transactionExecutorService.withdraw(keyEntity, walletId, request);
 	}

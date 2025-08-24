@@ -9,12 +9,13 @@ import java.util.UUID;
 
 @Component
 public class LedgerMapper {
-	public LedgerEntry create(UUID txId, UUID walletId, BigDecimal amount, PostingType type) {
+	public LedgerEntry create(UUID txId, UUID walletId, BigDecimal amount, PostingType type, BigDecimal currentBalance) {
 		return LedgerEntry.builder()
 			.txId(txId)
 			.walletId(walletId)
 			.amount(amount)
 			.postingType(type)
+			.currentBalance(currentBalance)
 			.build();
 	}
 }

@@ -62,7 +62,7 @@ public class IdempotencyService {
 	public String markCompleted(IdempotencyKey key, int httpStatus, Object responseDto, IdempotencyStatus status) {
 		try {
 			var json = serializationUtils.toJson(responseDto);
-			var storedBodyOpt = idempotencyKeyRepository.markCompleted(key.getIdempotencyKey(), httpStatus, json, status.getValue(), key.getRequestHash());
+			var storedBodyOpt = idempotencyKeyRepository.markCompleted(key.getIdempotencyKey(), httpStatus, json, status.name().toLowerCase(), key.getRequestHash());
 			if (storedBodyOpt.isEmpty()) {
 				log.error("Failed state transition to {} for key {} (hash mismatch or state)", status, key.getIdempotencyKey());
 				throw new IllegalStateException("Idempotency key not in in_progress state or hash mismatch");

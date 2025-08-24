@@ -4,6 +4,20 @@
 
 - http://localhost:8081/wallet-api/swagger-ui/index.html
 
+# Postgres container
+
+```
+docker pull postgres:17
+docker run -d \
+  --name wallet-postgres \
+  -e POSTGRES_DB=wallet \
+  -e POSTGRES_USER=wallet_user \
+  -e POSTGRES_PASSWORD=wallet_password \
+  -p 5432:5432 \
+  -v wallet_pg_data:/var/lib/postgresql/data \
+  postgres:17
+```
+
 This service manages user wallets with operations to create wallets, retrieve balances (current and historical), and post deposits, withdrawals, and transfers. It is designed to run multiple stateless instances concurrently without distributed locks, while preventing duplicates and preserving a complete audit trail.
 
 Contents

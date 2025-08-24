@@ -41,4 +41,7 @@ public class LedgerEntry {
 	@Column("created_at")
 	private OffsetDateTime createdAt;
 
+	@Column("current_balance")
+	private BigDecimal currentBalance;
+
 }

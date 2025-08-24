@@ -26,7 +26,7 @@ public class TransactionExecutorService {
 	public ResponseEntity<String> deposit(IdempotencyKey key, UUID walletId, TransactionRequestDto request) {
 		try {
 			var newBalance = walletService.depositAndGetNewBalance(key, walletId, request.getAmount());
-			ledgerService.createDepositEntry(key.getRefId(), walletId, request.getAmount());
+			ledgerService.createDepositEntry(key.getRefId(), walletId, request.getAmount(), newBalance);
 			var responseDto = transactionMapper.toResponseDto(key.getRefId(), walletId, newBalance);
 			var body = idempotencyService.markCompleted(key, 200, responseDto, IdempotencyStatus.SUCCEEDED);
 			return ResponseEntity.ok(body);
@@ -40,7 +40,7 @@ public class TransactionExecutorService {
 	public ResponseEntity<String> withdraw(IdempotencyKey key, UUID walletId, TransactionRequestDto request) {
 		try {
 			var newBalance = walletService.withdrawAndGetNewBalance(key, walletId, request.getAmount());
-			ledgerService.createWithdrawEntry(key.getRefId(), walletId, request.getAmount());
+			ledgerService.createWithdrawEntry(key.getRefId(), walletId, request.getAmount(), newBalance);
 			var responseDto = transactionMapper.toResponseDto(key.getRefId(), walletId, newBalance);
 			var body = idempotencyService.markCompleted(key, 200, responseDto, IdempotencyStatus.SUCCEEDED);
 			return ResponseEntity.ok(body);

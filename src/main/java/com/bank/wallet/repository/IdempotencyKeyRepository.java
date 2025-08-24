@@ -12,7 +12,7 @@ import java.util.UUID;
 @Repository
 public interface IdempotencyKeyRepository extends CrudRepository<IdempotencyKey, String> {
 
-	@Query("SELECT idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, (response_body::text) as response_body, first_seen_at, last_seen_at, ref_id FROM idempotency_keys WHERE idempotency_key = :key AND request_hash = :requestHash")
+	@Query("SELECT idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, response_body, first_seen_at, last_seen_at, ref_id FROM idempotency_keys WHERE idempotency_key = :key AND request_hash = :requestHash")
 	Optional<IdempotencyKey> findByIdempotencyKeyAndRequestHash(
 		@Param("key") UUID key,
 		@Param("requestHash") String requestHash
@@ -22,7 +22,7 @@ public interface IdempotencyKeyRepository extends CrudRepository<IdempotencyKey,
 		INSERT INTO idempotency_keys (idempotency_key, method, path, request_hash, status, response_status, response_body, first_seen_at, last_seen_at, ref_id)
 		VALUES (:key, :method, :path, :requestHash, 'in_progress', NULL, NULL, now(), now(), :refId)
 		ON CONFLICT (idempotency_key) DO NOTHING
-		RETURNING idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, (response_body::text) as response_body, first_seen_at, last_seen_at, ref_id
+		RETURNING idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, response_body, first_seen_at, last_seen_at, ref_id
 		""")
 	Optional<IdempotencyKey> tryInsertWithRef(
 		@Param("key") UUID key,
@@ -39,7 +39,7 @@ public interface IdempotencyKeyRepository extends CrudRepository<IdempotencyKey,
 			WHERE idempotency_key = :key
 			  AND status = 'in_progress'
 			  AND last_seen_at < now() - (:staleSeconds || ' seconds')::interval
-			RETURNING idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, (response_body::text) as response_body, first_seen_at, last_seen_at, ref_id
+			RETURNING idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, response_body, first_seen_at, last_seen_at, ref_id
 		)
 		SELECT * FROM upd
 		""")
@@ -48,7 +48,7 @@ public interface IdempotencyKeyRepository extends CrudRepository<IdempotencyKey,
 	@Query("""
 		WITH upd AS (
 			UPDATE idempotency_keys
-			SET status = :status, response_status = :responseStatus, response_body = :responseBody::jsonb, last_seen_at = now()
+			SET status = :status::idempotency_status, response_status = :responseStatus, response_body = :responseBody, last_seen_at = now()
 			WHERE idempotency_key = :key AND status = 'in_progress' AND request_hash = :requestHash
 			RETURNING response_body::text AS body
 		)

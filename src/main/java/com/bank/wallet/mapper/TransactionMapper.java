@@ -4,16 +4,17 @@ import com.bank.wallet.dto.wallet.TransactionResponseDto;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 @Component
 public class TransactionMapper {
 
-    public TransactionResponseDto toResponseDto(UUID txId, UUID walletId, BigDecimal newBalance) {
-        return TransactionResponseDto.builder()
-            .transactionId(txId)
-            .walletId(walletId)
-            .newBalance(newBalance)
-            .build();
-    }
+	public TransactionResponseDto toResponseDto(UUID txId, UUID walletId, BigDecimal newBalance) {
+		return TransactionResponseDto.builder()
+			.transactionId(txId)
+			.walletId(walletId)
+			.newBalance(newBalance.setScale(2, RoundingMode.HALF_UP))
+			.build();
+	}
 }

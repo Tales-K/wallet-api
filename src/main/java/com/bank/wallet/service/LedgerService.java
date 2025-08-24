@@ -19,29 +19,29 @@ public class LedgerService {
     private final LedgerValidator ledgerValidator;
     private final LedgerMapper ledgerMapper;
 
-    private void insert(UUID txId, UUID walletId, BigDecimal amount, PostingType type) {
-        var entry = ledgerMapper.create(txId, walletId, amount, type);
+    private void insert(UUID txId, UUID walletId, BigDecimal amount, PostingType type, BigDecimal currentBalance) {
+        var entry = ledgerMapper.create(txId, walletId, amount, type, currentBalance);
         ledgerValidator.validate(entry);
-        var rows = ledgerEntryRepository.insertGeneric(txId, walletId, amount, type.name().toLowerCase());
+        var rows = ledgerEntryRepository.insertGeneric(txId, walletId, amount, type.name().toLowerCase(), currentBalance);
         if (rows != 1) {
             log.error("Ledger insert failed action={} txId={} walletId={} rows={}", type, txId, walletId, rows);
             throw new IllegalStateException("Ledger insertion failed: " + type);
         }
     }
 
-    public void createDepositEntry(UUID txId, UUID walletId, BigDecimal amount) {
-        insert(txId, walletId, amount, PostingType.DEPOSIT);
+    public void createDepositEntry(UUID txId, UUID walletId, BigDecimal amount, BigDecimal currentBalance) {
+        insert(txId, walletId, amount, PostingType.DEPOSIT, currentBalance);
     }
 
-    public void createWithdrawEntry(UUID txId, UUID walletId, BigDecimal amount) {
-        insert(txId, walletId, amount.negate(), PostingType.WITHDRAW);
+    public void createWithdrawEntry(UUID txId, UUID walletId, BigDecimal amount, BigDecimal currentBalance) {
+        insert(txId, walletId, amount.negate(), PostingType.WITHDRAW, currentBalance);
     }
 
-    public void createTransferDebitEntry(UUID txId, UUID fromWalletId, BigDecimal amount) {
-        insert(txId, fromWalletId, amount.negate(), PostingType.TRANSFER_DEBIT);
+    public void createTransferDebitEntry(UUID txId, UUID fromWalletId, BigDecimal amount, BigDecimal currentBalance) {
+        insert(txId, fromWalletId, amount.negate(), PostingType.TRANSFER_DEBIT, currentBalance);
     }
 
-    public void createTransferCreditEntry(UUID txId, UUID toWalletId, BigDecimal amount) {
-        insert(txId, toWalletId, amount, PostingType.TRANSFER_CREDIT);
+    public void createTransferCreditEntry(UUID txId, UUID toWalletId, BigDecimal amount, BigDecimal currentBalance) {
+        insert(txId, toWalletId, amount, PostingType.TRANSFER_CREDIT, currentBalance);
     }
 }
