@@ -49,9 +49,15 @@ databaseChangeLog:
         path: classpath:db/changelog/006-enforce-ledger-append-only.sql
 
   - changeSet:
-      id: 007-rename-idempotency-status-succeeded-to-completed
+      id: 007-alter-ledger-drop-transfer-id
       author: tales.kerschner
-      comment: Rename idempotency_status enum value succeeded to completed
-      runOnChange: false
+      comment: Drop transfer_id column and related indexes from ledger_entries
       sqlFile:
-        path: classpath:db/changelog/007-rename-idempotency-status-succeeded-to-completed.sql
+        path: classpath:db/changelog/007-alter-ledger-drop-transfer-id.sql
+
+  - changeSet:
+      id: 008-alter-idempotency-keys-add-ref-id
+      author: tales.kerschner
+      comment: Add ref_id column to idempotency_keys
+      sqlFile:
+        path: classpath:db/changelog/008-alter-idempotency-keys-add-ref-id.sql

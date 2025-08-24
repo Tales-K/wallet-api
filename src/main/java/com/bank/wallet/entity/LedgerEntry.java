@@ -37,9 +37,6 @@ public class LedgerEntry {
 	@Column("posting_type")
 	private PostingType postingType;
 
-	@Column("transfer_id")
-	private UUID transferId;
-
 	@CreatedDate
 	@Column("created_at")
 	private OffsetDateTime createdAt;

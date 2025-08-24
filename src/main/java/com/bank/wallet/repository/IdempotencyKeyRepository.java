@@ -8,31 +8,36 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface IdempotencyKeyRepository extends CrudRepository<IdempotencyKey, String> {
 
-	@Query("SELECT idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, (response_body::text) as response_body, first_seen_at, last_seen_at FROM idempotency_keys WHERE idempotency_key = :key")
+	@Query("SELECT idempotency_key, method, path, request_hash, UPPER(status::text) as status, response_status, (response_body::text) as response_body, first_seen_at, last_seen_at, ref_id FROM idempotency_keys WHERE idempotency_key = :key")
 	Optional<IdempotencyKey> findByIdempotencyKey(@Param("key") String key);
 
 	@Modifying
 	@Query("""
-		INSERT INTO idempotency_keys (idempotency_key, method, path, request_hash, status, response_status, response_body, first_seen_at, last_seen_at)
-		VALUES (:key, :method, :path, :requestHash, 'in_progress', NULL, NULL, now(), now())
+		INSERT INTO idempotency_keys (idempotency_key, method, path, request_hash, status, response_status, response_body, first_seen_at, last_seen_at, ref_id)
+		VALUES (:key, :method, :path, :requestHash, 'in_progress', NULL, NULL, now(), now(), :refId)
 		ON CONFLICT (idempotency_key) DO NOTHING
 		""")
-	int insertNew(@Param("key") String key,
-				  @Param("method") String method,
-				  @Param("path") String path,
-				  @Param("requestHash") String requestHash);
+	int insertNewWithRef(@Param("key") String key,
+						 @Param("method") String method,
+						 @Param("path") String path,
+						 @Param("requestHash") String requestHash,
+						 @Param("refId") UUID refId);
 
-	@Modifying
 	@Query("""
-		UPDATE idempotency_keys
-		SET status = 'completed', response_status = :responseStatus, response_body = :responseBody::jsonb, last_seen_at = now()
-		WHERE idempotency_key = :key AND status = 'in_progress'
+		WITH upd AS (
+			UPDATE idempotency_keys
+			SET status = :status, response_status = :responseStatus, response_body = :responseBody::jsonb, last_seen_at = now()
+			WHERE idempotency_key = :key AND status = 'in_progress' AND request_hash = :requestHash
+			RETURNING response_body::text AS body
+		)
+		SELECT body FROM upd
 		""")
-	int markCompleted(@Param("key") String key, @Param("responseStatus") int responseStatus, @Param("responseBody") String responseBody);
+	Optional<String> markCompleted(@Param("key") String key, @Param("responseStatus") int responseStatus, @Param("responseBody") String responseBody, @Param("status") String status, @Param("requestHash") String requestHash);
 
 	@Modifying
 	@Query("""

@@ -1,6 +1,7 @@
 package com.bank.wallet.exception;
 
 import com.bank.wallet.dto.error.ErrorResponseDto;
+import com.bank.wallet.entity.enums.IdempotencyStatus;
 import com.bank.wallet.service.IdempotencyService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -97,6 +98,18 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 	}
 
+	@ExceptionHandler(SemanticValidationException.class)
+	public ResponseEntity<ErrorResponseDto> handleSemantic(SemanticValidationException ex, HttpServletRequest request) {
+		log.warn("Semantic validation error: {}", ex.getMessage());
+		var error = ErrorResponseDto.builder()
+			.code("SEMANTIC_ERROR")
+			.message(ex.getMessage())
+			.timestamp(OffsetDateTime.now())
+			.build();
+		cacheFailed(request, HttpStatus.UNPROCESSABLE_ENTITY, error);
+		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+	}
+
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponseDto> handleGeneral(Exception ex, HttpServletRequest request) {
 		log.error("Unexpected error", ex);
@@ -111,7 +124,7 @@ public class GlobalExceptionHandler {
 	private void cacheFailed(HttpServletRequest request, HttpStatus status, ErrorResponseDto body) {
 		var key = request.getHeader("Idempotency-Key");
 		if (key == null || key.isBlank()) return;
-		idempotencyService.markCompleted(key, status.value(), body);
+		idempotencyService.markCompleted(key, status.value(), body, IdempotencyStatus.FAILED);
 	}
 
 }

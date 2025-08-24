@@ -1,7 +1,5 @@
 package com.bank.wallet.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.hash.Hashing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +16,7 @@ import java.util.Objects;
 @Slf4j
 public class ContextUtils {
 
-    private final ObjectMapper objectMapper;
+    private final SerializationUtils serializationUtils;
 
     public String getCurrentRequestMethod() {
         var request = getCurrentRequest();
@@ -32,13 +30,13 @@ public class ContextUtils {
 
     public String generateRequestHash(String method, String path, Object requestBody) {
         try {
-            var bodyJson = requestBody != null ? objectMapper.writeValueAsString(requestBody) : "";
+            var bodyJson = requestBody != null ? serializationUtils.toJson(requestBody) : "";
             var input = method + path + bodyJson;
 
             return Hashing.sha256()
                     .hashString(input, StandardCharsets.UTF_8)
                     .toString();
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             log.error("Error generating request hash", e);
             throw new RuntimeException("Failed to generate request hash", e);
         }

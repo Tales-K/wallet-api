@@ -1,6 +1,7 @@
 package com.bank.wallet.service;
 
 import com.bank.wallet.dto.wallet.TransactionRequestDto;
+import com.bank.wallet.entity.enums.IdempotencyStatus;
 import com.bank.wallet.mapper.TransactionMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,16 +22,13 @@ public class TransactionExecutorService {
 	private final TransactionMapper transactionMapper;
 
 	@Transactional
-	public ResponseEntity<String> deposit(UUID walletId, TransactionRequestDto request, String idempotencyKey) {
+	public ResponseEntity<String> deposit(String idempotencyKey, UUID txId, UUID walletId, TransactionRequestDto request) {
 		try {
 			var newBalance = walletService.depositAndGetNewBalance(walletId, request.getAmount());
-
-			var txId = UUID.randomUUID();
 			ledgerService.createDepositEntry(txId, walletId, request.getAmount());
-
 			var responseDto = transactionMapper.toResponseDto(txId, walletId, newBalance);
-			var body = idempotencyService.markCompleted(idempotencyKey, 200, responseDto);
-			return ResponseEntity.status(200).body(body);
+			var body = idempotencyService.markCompleted(idempotencyKey, 200, responseDto, IdempotencyStatus.SUCCEEDED);
+			return ResponseEntity.ok(body);
 		} catch (Exception e) {
 			log.error("Error processing deposit for wallet: {}", walletId, e);
 			throw e;
@@ -38,16 +36,13 @@ public class TransactionExecutorService {
 	}
 
 	@Transactional
-	public ResponseEntity<String> withdraw(UUID walletId, TransactionRequestDto request, String idempotencyKey) {
+	public ResponseEntity<String> withdraw(String idempotencyKey, UUID txId, UUID walletId, TransactionRequestDto request) {
 		try {
 			var newBalance = walletService.withdrawAndGetNewBalance(walletId, request.getAmount());
-
-			var txId = UUID.randomUUID();
 			ledgerService.createWithdrawEntry(txId, walletId, request.getAmount());
-
 			var responseDto = transactionMapper.toResponseDto(txId, walletId, newBalance);
-			var body = idempotencyService.markCompleted(idempotencyKey, 200, responseDto);
-			return ResponseEntity.status(200).body(body);
+			var body = idempotencyService.markCompleted(idempotencyKey, 200, responseDto, IdempotencyStatus.SUCCEEDED);
+			return ResponseEntity.ok(body);
 		} catch (Exception e) {
 			log.error("Error processing withdrawal for wallet: {}", walletId, e);
 			throw e;

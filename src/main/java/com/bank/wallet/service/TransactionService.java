@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -21,20 +20,18 @@ public class TransactionService {
 	public ResponseEntity<String> deposit(UUID walletId, TransactionRequestDto request, String idempotencyKey) {
 		validator.validateIdempotencyKey(idempotencyKey);
 		log.debug("Processing deposit for wallet: {}, amount: {}", walletId, request.getAmount());
-
-		var cached = idempotencyService.checkCacheOrProceed(idempotencyKey, request);
-		if (cached != null) return cached;
-
-		return transactionExecutorService.deposit(walletId, request, idempotencyKey);
+		var claim = idempotencyService.claim(idempotencyKey, request);
+		if (claim.cachedResponse() != null) return claim.cachedResponse();
+		var txId = claim.refId();
+		return transactionExecutorService.deposit(idempotencyKey, txId, walletId, request);
 	}
 
 	public ResponseEntity<String> withdraw(UUID walletId, TransactionRequestDto request, String idempotencyKey) {
 		validator.validateIdempotencyKey(idempotencyKey);
 		log.debug("Processing withdrawal for wallet: {}, amount: {}", walletId, request.getAmount());
-
-		var cached = idempotencyService.checkCacheOrProceed(idempotencyKey, request);
-		if (cached != null) return cached;
-
-		return transactionExecutorService.withdraw(walletId, request, idempotencyKey);
+		var claim = idempotencyService.claim(idempotencyKey, request);
+		if (claim.cachedResponse() != null) return claim.cachedResponse();
+		var txId = claim.refId();
+		return transactionExecutorService.withdraw(idempotencyKey, txId, walletId, request);
 	}
 }

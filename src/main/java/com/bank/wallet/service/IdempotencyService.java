@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -24,52 +26,56 @@ public class IdempotencyService {
 	private final SerializationUtils serializationUtils;
 	private static final int STALE_THRESHOLD_SECONDS = 30;
 
+	public record IdempotencyClaimResult(ResponseEntity<String> cachedResponse, UUID refId, String requestHash) {
+		public static IdempotencyClaimResult replay(ResponseEntity<String> r) { return new IdempotencyClaimResult(r, null, null); }
+		public static IdempotencyClaimResult claimed(UUID refId, String hash) { return new IdempotencyClaimResult(null, refId, hash); }
+	}
+
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public ResponseEntity<String> checkCacheOrProceed(String idempotencyKey, Object requestDto) {
+	public IdempotencyClaimResult claim(String idempotencyKey, Object requestDto) {
 		var method = contextUtils.getCurrentRequestMethod();
 		var path = contextUtils.getCurrentRequestPath();
 		var requestHash = contextUtils.generateRequestHash(method, path, requestDto);
-		var inserted = idempotencyKeyRepository.insertNew(idempotencyKey, method, path, requestHash);
-		if (inserted == 1) return null; // brand new key
+		var refId = UUID.randomUUID();
+		var inserted = idempotencyKeyRepository.insertNewWithRef(idempotencyKey, method, path, requestHash, refId);
+		if (inserted == 1) return IdempotencyClaimResult.claimed(refId, requestHash);
 		var existing = idempotencyKeyRepository.findByIdempotencyKey(idempotencyKey)
 			.orElseThrow(() -> new RuntimeException("Idempotency key not found after conflict"));
 		return handleExisting(existing, requestHash);
 	}
 
-	private ResponseEntity<String> handleExisting(IdempotencyKey existingKey, String requestHash) {
-		if (!requestHash.equals(existingKey.getRequestHash())) {
+	private IdempotencyClaimResult handleExisting(IdempotencyKey existing, String requestHash) {
+		if (!requestHash.equals(existing.getRequestHash())) {
 			throw new IdempotencyConflictException("IDEMPOTENCY_KEY_REUSE", "Idempotency key reused for different request");
 		}
-		if (existingKey.getStatus() == IdempotencyStatus.COMPLETED) {
-			if (existingKey.getResponseBody() == null) {
-				log.warn("Idempotency key stored without response body: {}", existingKey.getIdempotencyKey());
+		if (existing.getStatus() == IdempotencyStatus.SUCCEEDED || existing.getStatus() == IdempotencyStatus.FAILED) {
+			if (existing.getResponseBody() == null) {
+				log.warn("Idempotency key stored without response body: {}", existing.getIdempotencyKey());
 				throw new RuntimeException("Cached response missing for idempotency key");
 			}
-			return ResponseEntity.status(existingKey.getResponseStatus()).body(existingKey.getResponseBody());
+			return IdempotencyClaimResult.replay(ResponseEntity.status(existing.getResponseStatus()).body(existing.getResponseBody()));
 		}
-		if (existingKey.getStatus() == IdempotencyStatus.IN_PROGRESS) {
-			var updated = idempotencyKeyRepository.tryTakeOver(existingKey.getIdempotencyKey(), STALE_THRESHOLD_SECONDS);
+		if (existing.getStatus() == IdempotencyStatus.IN_PROGRESS) {
+			var updated = idempotencyKeyRepository.tryTakeOver(existing.getIdempotencyKey(), STALE_THRESHOLD_SECONDS);
 			if (updated == 1) {
-				log.warn("Took over stale idempotency key {}", existingKey.getIdempotencyKey());
-				return null;
+				return IdempotencyClaimResult.claimed(existing.getRefId(), existing.getRequestHash());
 			}
 			throw new IdempotencyInProgressException("Request is being processed by another instance");
 		}
-		return null;
+		return IdempotencyClaimResult.claimed(existing.getRefId(), existing.getRequestHash());
 	}
 
-	public String markCompleted(String idempotencyKey, int httpStatus, Object responseDto) {
+	public String markCompleted(String idempotencyKey, int httpStatus, Object responseDto, IdempotencyStatus status, String requestHash) {
 		try {
 			var json = serializationUtils.toJson(responseDto);
-			var updated = idempotencyKeyRepository.markCompleted(idempotencyKey, httpStatus, json);
-			if (updated != 1) {
-				log.error("Failed state transition to COMPLETED for key {} (updated={})", idempotencyKey, updated);
-				throw new IllegalStateException("Idempotency key not in in_progress state");
+			var storedBodyOpt = idempotencyKeyRepository.markCompleted(idempotencyKey, httpStatus, json, status.getValue(), requestHash);
+			if (storedBodyOpt.isEmpty()) {
+				log.error("Failed state transition to {} for key {} (hash mismatch or state)", status, idempotencyKey);
+				throw new IllegalStateException("Idempotency key not in in_progress state or hash mismatch");
 			}
-			log.debug("Idempotency key '{}' marked as COMPLETED", idempotencyKey);
-			return json;
+			return storedBodyOpt.get();
 		} catch (Exception e) {
-			log.error("Failed to mark COMPLETED for key {}", idempotencyKey, e);
+			log.error("Failed to mark {} for key {}", status, idempotencyKey, e);
 			throw new RuntimeException("Failed to update idempotency status", e);
 		}
 	}

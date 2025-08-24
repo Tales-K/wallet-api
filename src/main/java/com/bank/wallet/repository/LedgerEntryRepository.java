@@ -16,18 +16,11 @@ public interface LedgerEntryRepository extends CrudRepository<LedgerEntry, UUID>
 	@Modifying
 	@Query("""
 		INSERT INTO ledger_entries (tx_id, wallet_id, amount, posting_type)
-		VALUES (:txId, :walletId, :amount, 'deposit'::posting_type)
+		VALUES (:txId, :walletId, :amount, CAST(:postingType AS posting_type))
+		ON CONFLICT (tx_id, wallet_id) DO NOTHING
 		""")
-	void insertDeposit(@Param("txId") UUID txId,
-	                  @Param("walletId") UUID walletId,
-	                  @Param("amount") BigDecimal amount);
-
-	@Modifying
-	@Query("""
-		INSERT INTO ledger_entries (tx_id, wallet_id, amount, posting_type)
-		VALUES (:txId, :walletId, :amount, 'withdraw'::posting_type)
-		""")
-	void insertWithdraw(@Param("txId") UUID txId,
-	                   @Param("walletId") UUID walletId,
-	                   @Param("amount") BigDecimal amount);
+	int insertGeneric(@Param("txId") UUID txId,
+	                 @Param("walletId") UUID walletId,
+	                 @Param("amount") BigDecimal amount,
+	                 @Param("postingType") String postingType);
 }

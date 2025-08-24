@@ -50,7 +50,7 @@ public class IdempotencyKey {
 	@Column("last_seen_at")
 	private OffsetDateTime lastSeenAt;
 
-	public String getRequestSignature() {
-		return method + " " + path + " [" + requestHash + "]";
-	}
+	@Column("ref_id")
+	private java.util.UUID refId;
+
 }

@@ -28,15 +28,5 @@ public class LedgerValidator {
 		if (shouldBeNegative && amount.compareTo(BigDecimal.ZERO) >= 0) {
 			throw new IllegalArgumentException("Amount must be negative for " + type);
 		}
-
-		var isTransferPosting = type == PostingType.TRANSFER_DEBIT || type == PostingType.TRANSFER_CREDIT;
-		if (isTransferPosting && entry.getTransferId() == null) {
-			throw new IllegalArgumentException("Transfer ID is required for " + type);
-		}
-
-		var isDirectPosting = type == PostingType.DEPOSIT || type == PostingType.WITHDRAW;
-		if (isDirectPosting && entry.getTransferId() != null) {
-			throw new IllegalArgumentException("Transfer ID must be null for " + type);
-		}
 	}
 }

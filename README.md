@@ -110,8 +110,6 @@ Endpoints
     - Headers: Idempotency-Key
     - Body: { "from_wallet_id": "01J...", "to_wallet_id": "01J...", "amount": "10.00", "metadata": { ... } }
     - 200: { "transfer_id": "01J...", "status": "completed", "from_wallet_id": "...", "to_wallet_id": "...", "amount": "10.00" }
-- GET /api/v1/transfers/{transfer_id}
-    - 200: { "transfer_id": "01J...", "status": "completed" }
 - GET /api/v1/wallets/{wallet_id}/ledger?page=0&size=50&from=...&to=...
     - 200: { "page": 0, "size": 50, "total": 12345, "entries": [ ... ] }
 

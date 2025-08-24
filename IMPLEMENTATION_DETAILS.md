@@ -6,3 +6,5 @@
   using a combination of a unique request identifier and a database transaction.
 - I designed the system as stateless, which allows for easy scaling and load
   balancing.
+- Future cleanup schedules should be implemented to clean pending in_progress
+  idempotency keys.
