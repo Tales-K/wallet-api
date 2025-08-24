@@ -1,5 +1,6 @@
 package com.bank.wallet.service;
 
+import com.bank.wallet.entity.LedgerEntry;
 import com.bank.wallet.entity.enums.PostingType;
 import com.bank.wallet.mapper.LedgerMapper;
 import com.bank.wallet.repository.LedgerEntryRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -48,5 +50,14 @@ public class LedgerService {
 
     public BigDecimal getBalanceAsOf(UUID walletId, OffsetDateTime at) {
         return ledgerEntryRepository.findBalanceAsOf(walletId, at).orElse(BigDecimal.ZERO);
+    }
+
+    public List<LedgerEntry> findPage(UUID walletId, int page, int size, OffsetDateTime from, OffsetDateTime to) {
+        var offset = page * size;
+        return ledgerEntryRepository.findPage(walletId, from, to, size, offset);
+    }
+
+    public long count(UUID walletId, OffsetDateTime from, OffsetDateTime to) {
+        return ledgerEntryRepository.countAll(walletId, from, to);
     }
 }

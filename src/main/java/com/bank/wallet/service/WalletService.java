@@ -1,6 +1,7 @@
 package com.bank.wallet.service;
 
 import com.bank.wallet.dto.wallet.BalanceHistoryResponseDto;
+import com.bank.wallet.dto.wallet.LedgerPageResponseDto;
 import com.bank.wallet.dto.wallet.WalletResponseDto;
 import com.bank.wallet.entity.IdempotencyKey;
 import com.bank.wallet.entity.Wallet;
@@ -25,6 +26,7 @@ public class WalletService {
 	private final WalletRepository walletRepository;
 	private final WalletMapper walletMapper;
 	private final LedgerService ledgerService;
+	private final WalletValidator walletValidator;
 
 	@Transactional
 	public WalletResponseDto createWallet() {
@@ -62,6 +64,7 @@ public class WalletService {
 	}
 
 	public BalanceHistoryResponseDto getBalanceAsOf(UUID walletId, OffsetDateTime at) {
+		walletValidator.validateAt(at);
 		var wallet = this.findById(walletId);
 
 		var balance = at.isBefore(wallet.getCreatedAt())
@@ -69,6 +72,15 @@ public class WalletService {
 			: ledgerService.getBalanceAsOf(walletId, at);
 
 		return walletMapper.mapToBalanceHistory(walletId, balance, at);
+	}
+
+	public LedgerPageResponseDto listLedger(UUID walletId, int page, int size, OffsetDateTime from, OffsetDateTime to) {
+		walletValidator.validateDateRange(from, to);
+		var wallet = this.findById(walletId);
+		var entries = ledgerService.findPage(wallet.getWalletId(), page, size, from, to);
+		var total = ledgerService.count(wallet.getWalletId(), from, to);
+		var dtoEntries = walletMapper.mapLedgerEntries(entries);
+		return walletMapper.mapLedgerPage(page, size, total, dtoEntries);
 	}
 
 	private Wallet findById(UUID walletId) {

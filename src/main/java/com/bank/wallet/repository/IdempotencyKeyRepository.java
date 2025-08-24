@@ -1,6 +1,7 @@
 package com.bank.wallet.repository;
 
 import com.bank.wallet.entity.IdempotencyKey;
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -45,21 +46,17 @@ public interface IdempotencyKeyRepository extends CrudRepository<IdempotencyKey,
 		""")
 	Optional<IdempotencyKey> tryTakeOverReturning(@Param("key") UUID key, @Param("staleSeconds") int staleSeconds);
 
+	@Modifying
 	@Query("""
-		WITH upd AS (
-			UPDATE idempotency_keys
-			SET status = :status::idempotency_status, response_status = :responseStatus, response_body = :responseBody, last_seen_at = now()
-			WHERE idempotency_key = :key AND status = 'in_progress' AND request_hash = :requestHash
-			RETURNING response_body::text AS body
-		)
-		SELECT body FROM upd
+		UPDATE idempotency_keys
+		SET status = :status::idempotency_status, response_status = :responseStatus, response_body = :responseBody, last_seen_at = now()
+		WHERE idempotency_key = :key AND status = 'in_progress' AND request_hash = :requestHash
 		""")
-	Optional<String> markCompleted(
+	int markCompleted(
 		@Param("key") UUID key,
 		@Param("responseStatus") int responseStatus,
 		@Param("responseBody") String responseBody,
 		@Param("status") String status,
 		@Param("requestHash") String requestHash
 	);
-
 }

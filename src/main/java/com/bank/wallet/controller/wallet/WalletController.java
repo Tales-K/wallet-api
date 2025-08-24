@@ -1,17 +1,21 @@
 package com.bank.wallet.controller.wallet;
 
+import com.bank.wallet.dto.wallet.BalanceHistoryResponseDto;
+import com.bank.wallet.dto.wallet.LedgerPageResponseDto;
 import com.bank.wallet.dto.wallet.TransactionRequestDto;
 import com.bank.wallet.dto.wallet.WalletResponseDto;
-import com.bank.wallet.dto.wallet.BalanceHistoryResponseDto;
+import com.bank.wallet.mapper.WalletMapper;
 import com.bank.wallet.service.TransactionService;
 import com.bank.wallet.service.WalletService;
-import com.bank.wallet.mapper.WalletMapper;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +33,7 @@ import java.util.UUID;
 @RequestMapping(value = "/api/v1/wallets", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class WalletController implements WalletApi {
 
 	private final WalletService walletService;
@@ -72,5 +77,20 @@ public class WalletController implements WalletApi {
 	@GetMapping("/{walletId}/balance/history")
 	public BalanceHistoryResponseDto getHistoricalBalance(@PathVariable UUID walletId, @RequestParam("at") OffsetDateTime at) {
 		return walletService.getBalanceAsOf(walletId, at);
+	}
+
+	@Override
+	@GetMapping("/{walletId}/ledger")
+	public LedgerPageResponseDto listLedger(
+		@PathVariable UUID walletId,
+		@RequestParam(name = "page", defaultValue = "0")
+		@Min(value = 0, message = "page must be >= 0") int page,
+		@RequestParam(name = "size", defaultValue = "50")
+		@Min(value = 1, message = "size must be >= 1")
+		@Max(value = 500, message = "size must be <= 500") int size,
+		@RequestParam(name = "from") OffsetDateTime from,
+		@RequestParam(name = "to") OffsetDateTime to
+	) {
+		return walletService.listLedger(walletId, page, size, from, to);
 	}
 }

@@ -1,14 +1,17 @@
 package com.bank.wallet.controller.wallet;
 
+import com.bank.wallet.dto.wallet.BalanceHistoryResponseDto;
+import com.bank.wallet.dto.wallet.LedgerPageResponseDto;
 import com.bank.wallet.dto.wallet.TransactionRequestDto;
 import com.bank.wallet.dto.wallet.WalletResponseDto;
-import com.bank.wallet.dto.wallet.BalanceHistoryResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -98,5 +101,25 @@ public interface WalletApi {
 		@PathVariable UUID walletId,
 		@Parameter(description = "Timestamp in ISO-8601 format, e.g. 2025-01-01T00:00:00Z", required = true)
 		@RequestParam("at") OffsetDateTime at
+	);
+
+	@Operation(
+		summary = "List wallet ledger entries",
+		description = "Returns a paginated list of ledger entries for a wallet, ordered by created_at desc."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", description = "Ledger page returned"),
+		@ApiResponse(responseCode = "404", description = "Wallet not found")
+	})
+	@GetMapping("/{walletId}/ledger")
+	LedgerPageResponseDto listLedger(
+		@PathVariable UUID walletId,
+		@RequestParam(name = "page", defaultValue = "0")
+		@Min(value = 0, message = "page must be >= 0") int page,
+		@RequestParam(name = "size", defaultValue = "50")
+		@Min(value = 1, message = "size must be >= 1")
+		@Max(value = 500, message = "size must be <= 500") int size,
+		@RequestParam(name = "from") OffsetDateTime from,
+		@RequestParam(name = "to") OffsetDateTime to
 	);
 }
