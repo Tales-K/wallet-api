@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -107,6 +108,22 @@ public class GlobalExceptionHandler {
 		var body = ErrorResponseDto.builder()
 			.code("INVALID_FORMAT")
 			.message(message)
+			.timestamp(OffsetDateTime.now())
+			.details(details)
+			.build();
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+	}
+
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public ResponseEntity<ErrorResponseDto> handleMissingParameter(MissingServletRequestParameterException ex, HttpServletRequest request) {
+		log.warn("Missing request parameter: {}", ex.getParameterName());
+		var details = Map.<String, Object>of(
+			"parameter", ex.getParameterName(),
+			"expectedType", ex.getParameterType()
+		);
+		var body = ErrorResponseDto.builder()
+			.code("MISSING_PARAMETER")
+			.message("Required request parameter '" + ex.getParameterName() + "' is missing")
 			.timestamp(OffsetDateTime.now())
 			.details(details)
 			.build();

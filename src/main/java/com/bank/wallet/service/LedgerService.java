@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -43,5 +44,9 @@ public class LedgerService {
 
     public void createTransferCreditEntry(UUID txId, UUID toWalletId, BigDecimal amount, BigDecimal currentBalance) {
         insert(txId, toWalletId, amount, PostingType.TRANSFER_CREDIT, currentBalance);
+    }
+
+    public BigDecimal getBalanceAsOf(UUID walletId, OffsetDateTime at) {
+        return ledgerEntryRepository.findBalanceAsOf(walletId, at).orElse(BigDecimal.ZERO);
     }
 }

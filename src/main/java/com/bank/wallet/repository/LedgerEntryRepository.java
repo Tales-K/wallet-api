@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -26,4 +28,12 @@ public interface LedgerEntryRepository extends CrudRepository<LedgerEntry, UUID>
 		@Param("postingType") String postingType,
 		@Param("currentBalance") BigDecimal currentBalance
 	);
+
+	@Query("""
+		SELECT current_balance FROM ledger_entries
+		WHERE wallet_id = :walletId AND created_at <= :at
+		ORDER BY created_at DESC
+		LIMIT 1
+		""")
+	Optional<BigDecimal> findBalanceAsOf(@Param("walletId") UUID walletId, @Param("at") OffsetDateTime at);
 }

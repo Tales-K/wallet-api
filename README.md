@@ -88,14 +88,11 @@ Data Model (logical)
     - response_status INT NULL, response_body JSONB NULL
     - first_seen_at TIMESTAMPTZ, last_seen_at TIMESTAMPTZ
     - INDEX (last_seen_at)
-- snapshots
-    - wallet_id ULID, snapshot_at TIMESTAMPTZ, balance_at_snapshot DECIMAL(19,4)
-    - PK (wallet_id, snapshot_at)
 
 Invariants
 - No negative balances: enforced by SQL conditional updates.
 - Idempotency: UNIQUE(tx_id, wallet_id) for postings and UNIQUE(transfer_id) for transfers; Idempotency-Key maps to the first processed result.
-- Double-entry: Transfers create two ledger rows with the same transfer_id in the same transaction.
+- Double-entry: Transfers create two ledger rows with the same tx_id in the same transaction.
 - Ledger is append-only; balances reflect the sum of ledger entries.
 
 API Specification (v1)

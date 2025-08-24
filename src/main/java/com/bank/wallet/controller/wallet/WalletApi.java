@@ -2,6 +2,7 @@ package com.bank.wallet.controller.wallet;
 
 import com.bank.wallet.dto.wallet.TransactionRequestDto;
 import com.bank.wallet.dto.wallet.WalletResponseDto;
+import com.bank.wallet.dto.wallet.BalanceHistoryResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,7 +15,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Tag(name = "Wallet Management", description = "Operations related to wallet creation and management")
@@ -79,5 +82,21 @@ public interface WalletApi {
 		@Valid @RequestBody TransactionRequestDto request,
 		@Parameter(description = "Idempotency key for safe retries", required = true)
 		@RequestHeader("Idempotency-Key") UUID idempotencyKey
+	);
+
+	@Operation(
+		summary = "Get historical balance",
+		description = "Retrieves the wallet balance as of the provided timestamp (inclusive)."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", description = "Historical balance computed"),
+		@ApiResponse(responseCode = "400", description = "Invalid timestamp format"),
+		@ApiResponse(responseCode = "404", description = "Wallet not found")
+	})
+	@GetMapping("/{walletId}/balance/history")
+	BalanceHistoryResponseDto getHistoricalBalance(
+		@PathVariable UUID walletId,
+		@Parameter(description = "Timestamp in ISO-8601 format, e.g. 2025-01-01T00:00:00Z", required = true)
+		@RequestParam("at") OffsetDateTime at
 	);
 }
