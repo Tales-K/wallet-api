@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,10 +29,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ConcurrencyIT {
 
 	@Container
-	static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:16-alpine")
+	@ServiceConnection
+	static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:17-alpine")
 		.withDatabaseName("wallet")
-		.withUsername("wallet")
-		.withPassword("wallet")
+		.withUsername("wallet_user")
+		.withPassword("wallet_password")
 		.withEnv("POSTGRES_INITDB_ARGS", "--data-checksums")
 		.withCommand("postgres", "-c", "deadlock_timeout=100ms", "-c", "log_lock_waits=on");
 

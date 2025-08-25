@@ -2,9 +2,9 @@ spring:
   application:
     name: wallet
   datasource:
-    url: jdbc:postgresql://localhost:5432/wallet
-    username: wallet_user
-    password: wallet_password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wallet}
+    username: ${SPRING_DATASOURCE_USERNAME:wallet_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:wallet_password}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -19,7 +19,7 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yml
 
 server:
-  port: 8081
+  port: 8080
   servlet:
     context-path: /wallet-api
 
@@ -65,6 +65,24 @@ management:
   info:
     env:
       enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+      slo:
+        http:
+          server:
+            requests: 50ms,100ms,250ms,500ms,1s,2s,5s
+      minimum-expected-value:
+        http:
+          server:
+            requests: 5ms
+      maximum-expected-value:
+        http:
+          server:
+            requests: 10s
 
 info:
   app:
