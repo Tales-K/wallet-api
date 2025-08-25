@@ -125,5 +125,5 @@ K6_SCRIPT=/scripts/transfers.js docker compose -f infra/docker-compose.k6.yml up
 
 3. Check Grafana (user and password: admin)
 
-Metrics: http://localhost:3000/explore/metrics/trail
-Logs: http://localhost:3000/explore?left=%5B%22now-1h%22%2C%22now%22%2C%22Loki%22%2C%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%20%7C%20line_format%20%5C%22%7B%7B.msg%7D%7D%5C%22%22%7D%5D
+- [Metrics](http://localhost:3000/explore/metrics/trail)
+- [Logs](http://localhost:3000/explore?left=%5B%22now-1h%22%2C%22now%22%2C%22Loki%22%2C%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%20%7C%20line_format%20%5C%22%7B%7B.msg%7D%7D%5C%22%22%7D%5D)
