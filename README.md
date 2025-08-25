@@ -1,33 +1,36 @@
 # Wallet Service (Java) - Mission-Critical, Auditable, Horizontally Scalable
 
-# API Documentation
-
-Endpoints, schema and errors are all mapped out in the OpenAPI spec, available at:
-
-- http://localhost:8081/wallet-api/swagger-ui/index.html
-
-# Postgres container
-
-```
-docker run -d \
-  --name wallet-postgres \
-  -e POSTGRES_DB=wallet \
-  -e POSTGRES_USER=wallet_user \
-  -e POSTGRES_PASSWORD=wallet_password \
-  -p 5432:5432 \
-  -v wallet_pg_data:/var/lib/postgresql/data \
-  postgres:17
-```
-
-# Utils
-
-```shell
-docker exec -it wallet-postgres psql -U wallet_user -d postgres -c "DROP DATABASE IF EXISTS wallet;"
-docker exec -it wallet-postgres psql -U wallet_user -d postgres -c "CREATE DATABASE wallet OWNER wallet_user;"
-```
-
 This service manages user wallets with operations to create wallets, retrieve balances (current and historical), and post deposits, withdrawals, and transfers.
 It is designed to run multiple stateless instances concurrently without distributed locks, while preventing duplicates and preserving a complete audit trail.
+
+# Contents
+
+1. [How to run the project](#how-to-run-the-project)
+2. [Decisions](#decisions)
+3. [Assumptions](#assumptions)
+4. [Architecture Overview](#architecture-overview)
+5. [Infrastructure](#infrastructure)
+6. [Running the API locally](#running-the-api-locally)
+7. [Running unit tests](#running-unit-tests)
+8. [Running integration tests](#running-integration-tests)
+9. [Running load-balancer, monitoring and load tests](#running-load-balancer-monitoring-and-load-tests)
+
+# How to run the project
+
+Pre-requisites:
+
+- Docker and Docker Compose.
+- (Optional) For local run: JDK 21, Maven and Postgres.
+
+1) Run API + PostgreSQL DB
+
+```bash
+docker compose -f infra/docker-compose.yml up --build
+```
+
+2) Access the API documentation (endpoints, schemas and errors) using Swagger UI at:
+
+- http://localhost:8081/wallet-api/swagger-ui/index.html
 
 # Decisions
 
@@ -58,3 +61,69 @@ It is designed to run multiple stateless instances concurrently without distribu
     - Insert append-only ledger entries.
     - Store final response in idempotency_keys.
 - Transfers update two wallets within one transaction.
+
+# Infrastructure
+
+- Docker Compose is used to orchestrate the services.
+- Added optional observability stack (Grafana, Loki, Promtail) for metrics and logs.
+- Nginx is used as a load balancer to distribute requests across multiple API instances.
+- k6 is used for load testing the API.
+- Testcontainers are used for integration tests.
+
+# Running the API locally
+
+1. Start your postgres with a wallet database, wallet_user and wallet_password credentials.
+2. Run the API (it lives under api/ directory):
+
+```bash
+./api/mvnw -f api/pom.xml spring-boot:run
+```
+
+# Running unit tests
+
+```bash
+./api/mvnw -f api/pom.xml clean verify
+```
+
+# Running integration tests
+
+```bash
+./api/mvnw -f api/pom.xml -Dit.test=ConcurrencyIT clean test-compile failsafe:integration-test failsafe:verify
+```
+
+# Running load-balancer, monitoring and load tests
+
+1. Bring up Postgres, Nginx, Grafana, Loki, Prometheus, Promtail and 3 Java API instances
+
+```bash
+docker compose \
+  -f infra/docker-compose.yml \
+  -f infra/docker-compose.lb.yml \
+  -f infra/docker-compose.observability.yml \
+  up -d --build --scale app=3
+```
+
+2. Try and fail to destroy the api with load tests
+
+Deposits:
+
+```bash
+K6_SCRIPT=/scripts/deposits.js docker compose -f infra/docker-compose.k6.yml up --build --abort-on-container-exit k6
+```
+
+Withdraws:
+
+```bash
+K6_SCRIPT=/scripts/withdraws.js docker compose -f infra/docker-compose.k6.yml up --build --abort-on-container-exit k6
+```
+
+Transfers:
+
+```bash
+K6_SCRIPT=/scripts/transfers.js docker compose -f infra/docker-compose.k6.yml up --build --abort-on-container-exit k6
+```
+
+3. Check Grafana (user and password: admin)
+
+Metrics: http://localhost:3000/explore/metrics/trail
+Logs: http://localhost:3000/explore?left=%5B%22now-1h%22%2C%22now%22%2C%22Loki%22%2C%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%20%7C%20line_format%20%5C%22%7B%7B.msg%7D%7D%5C%22%22%7D%5D

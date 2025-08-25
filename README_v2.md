@@ -2,11 +2,6 @@
 
 This repo provides compose stacks and k6 scripts so reviewers can run everything with a few commands.
 
-Prereqs
-
-- Docker and Docker Compose
-- For local Maven test runs: JDK 21 (or just use Docker)
-
 Build and run API locally (optional)
 
 ```bash
@@ -49,6 +44,8 @@ docker compose \
   -f infra/docker-compose.observability.yml \
   up -d --build
 
+# check metrics on grafana: http://localhost:3000/explore/metrics/trail (user/password: admin/admin)
+
 # Scale API to 3 instances
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.lb.yml up -d --scale app=3
 ```
@@ -73,7 +70,15 @@ K6_SCRIPT=/scripts/transfers.js ... up --abort-on-container-exit k6
 Tear down
 
 ```bash
-docker compose -f infra/docker-compose.yml -f infra/docker-compose.lb.yml -f infra/docker-compose.k6.yml -f infra/docker-compose.observability.yml down -v
+
+docker compose \
+  -f infra/docker-compose.yml \
+  -f infra/docker-compose.lb.yml \
+  -f infra/docker-compose.observability.yml \
+  -f infra/docker-compose.logs.yml \
+  -f infra/docker-compose.k6.yml \
+  down -v
+
 ```
 
 Notes
