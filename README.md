@@ -47,7 +47,8 @@ password: admin
 
 #### Option 1
 
-Run manually through [the API documentation](http://localhost:8081/wallet-api/swagger-ui/index.html) (has endpoints, schemas and errors)
+Run manually through [the API documentation](http://localhost:8081/wallet-api/swagger-ui/index.html) (has endpoints, schemas and errors).
+Here you can create wallets, do deposits, withdrawals and transfers, and check balances and ledgers.
 
 #### Option 2
 
@@ -133,4 +134,15 @@ Made with k6, they target the load-balancer so it spreads across 3 instances.
 
 ```bash
 ./api/mvnw -f api/pom.xml spring-boot:run
+```
+
+# Time tracking
+
+```
+    [1h] - research (atomicity and idempotency patterns)
+    [2h] - development of transaction entities
+    [2h] - implementation of idempotency
+    [2h] - testing (unit, integration and load) and bugfix
+    [2h] - infra setup
+    [1h] - documentation and review
 ```
