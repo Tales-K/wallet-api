@@ -12,16 +12,19 @@ It is designed to run multiple stateless instances concurrently without distribu
 5. [Infrastructure](#infrastructure)
 6. [Running tests](#running-tests)
 8. [Running the API locally](#running-the-api-locally)
+9. [Time tracking](#time-tracking)
 
 # How to run the project
 
 Pre-requisites:
 
 - Docker and Docker Compose.
+- (Optional) Java 21 for unit/integration tests
 
 ### 1) Run all services (API, db, load-balancer, monitoring and tracing):
 
-`Clone this project run all commands in its root.`
+1. Clone this repo and run all commands in its root.
+2. Make sure your docker engine is running.
 
 ```bash
 docker compose \
@@ -124,19 +127,41 @@ Made with Testcontainers, they run a real Postgres instance in a container.
 Made with k6, they target the load-balancer so it spreads across 3 instances.
 
 ```bash
-./api/mvnw -f api/pom.xml -Dit.test=ConcurrencyIT clean test-compile failsafe:integration-test failsafe:verify
+K6_SCRIPT=transfers.js docker compose -f infra/docker-compose.k6.yml run --rm k6
+K6_SCRIPT=deposits.js docker compose -f infra/docker-compose.k6.yml run --rm k6
+K6_SCRIPT=withdraws.js docker compose -f infra/docker-compose.k6.yml run --rm k6
+```
+
+# Turning all of
+
+```bash
+docker compose \
+  -f infra/docker-compose.yml \
+  -f infra/docker-compose.lb.yml \
+  -f infra/docker-compose.observability.yml \
+  -f infra/docker-compose.zipkin.yml \
+  down
 ```
 
 # Running the API locally
 
 #### Requires JDK 21, Maven and Postgres
 
-1. Start your postgres with a `wallet` database, `wallet_user` and `wallet_password` credentials.
-2. Run the API:
+1. Run a Postgres in a container
+
+```bash
+docker compose -f infra/docker-compose.yml up db -d
+```
+
+2. Run the API locally:
 
 ```bash
 ./api/mvnw -f api/pom.xml spring-boot:run
 ```
+
+3. Check documentation in local [Swagger-UI](http://localhost:8080/wallet-api/swagger-ui/index.html)
+
+> You may have to disable CORS validation in your browser.
 
 # Time tracking
 

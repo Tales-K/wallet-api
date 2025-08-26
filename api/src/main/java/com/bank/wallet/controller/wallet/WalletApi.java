@@ -8,6 +8,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import com.bank.wallet.dto.error.ErrorResponseDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -32,7 +35,8 @@ public interface WalletApi {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "201", description = "Wallet created successfully"),
-		@ApiResponse(responseCode = "500", description = "Internal server error")
+		@ApiResponse(responseCode = "500", description = "Internal server error",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
 	})
 	@PostMapping
 	WalletResponseDto createWallet();
@@ -43,8 +47,10 @@ public interface WalletApi {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", description = "Wallet found successfully"),
-		@ApiResponse(responseCode = "404", description = "Wallet not found"),
-		@ApiResponse(responseCode = "400", description = "Invalid wallet ID format")
+		@ApiResponse(responseCode = "404", description = "Wallet not found",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "400", description = "Invalid wallet ID format",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
 	})
 	@GetMapping("/{walletId}")
 	WalletResponseDto getWallet(@PathVariable UUID walletId);
@@ -55,10 +61,14 @@ public interface WalletApi {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", description = "Deposit successful"),
-		@ApiResponse(responseCode = "400", description = "Invalid request data or missing Idempotency-Key header"),
-		@ApiResponse(responseCode = "404", description = "Wallet not found"),
-		@ApiResponse(responseCode = "409", description = "Idempotency conflict or request in progress"),
-		@ApiResponse(responseCode = "500", description = "Internal server error")
+		@ApiResponse(responseCode = "400", description = "Invalid request data or missing Idempotency-Key header",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "404", description = "Wallet not found",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "409", description = "Idempotency conflict or request in progress",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "500", description = "Internal server error",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
 	})
 	@PostMapping("/{walletId}/deposit")
 	ResponseEntity<String> deposit(
@@ -74,10 +84,14 @@ public interface WalletApi {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", description = "Withdrawal successful"),
-		@ApiResponse(responseCode = "400", description = "Invalid request data or missing Idempotency-Key header"),
-		@ApiResponse(responseCode = "404", description = "Wallet not found"),
-		@ApiResponse(responseCode = "409", description = "Insufficient funds, idempotency conflict, or request in progress"),
-		@ApiResponse(responseCode = "500", description = "Internal server error")
+		@ApiResponse(responseCode = "400", description = "Invalid request data or missing Idempotency-Key header",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "404", description = "Wallet not found",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "409", description = "Insufficient funds, idempotency conflict, or request in progress",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "500", description = "Internal server error",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
 	})
 	@PostMapping("/{walletId}/withdraw")
 	ResponseEntity<String> withdraw(
@@ -93,8 +107,10 @@ public interface WalletApi {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", description = "Historical balance computed"),
-		@ApiResponse(responseCode = "400", description = "Invalid timestamp format"),
-		@ApiResponse(responseCode = "404", description = "Wallet not found")
+		@ApiResponse(responseCode = "400", description = "Invalid timestamp format",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))),
+		@ApiResponse(responseCode = "404", description = "Wallet not found",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
 	})
 	@GetMapping("/{walletId}/balance/history")
 	BalanceHistoryResponseDto getHistoricalBalance(
@@ -109,7 +125,8 @@ public interface WalletApi {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", description = "Ledger page returned"),
-		@ApiResponse(responseCode = "404", description = "Wallet not found")
+		@ApiResponse(responseCode = "404", description = "Wallet not found",
+			content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
 	})
 	@GetMapping("/{walletId}/ledger")
 	LedgerPageResponseDto listLedger(

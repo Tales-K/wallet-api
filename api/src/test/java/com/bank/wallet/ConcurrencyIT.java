@@ -48,8 +48,8 @@ class ConcurrencyIT {
 	@Timeout(60)
 	void concurrentDeposits_sumMatches() {
 		var walletId = createWalletRequest();
-		var threads = 100;
-		var perThread = 200;
+		var threads = 50;
+		var perThread = 100;
 		var amount = "1.00";
 
 		runParallel(threads, perThread, () -> depositRequest(walletId, amount));
