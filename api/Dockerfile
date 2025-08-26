@@ -13,6 +13,9 @@ RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests package
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Create log directory and set permissions
+RUN mkdir -p /var/log/app && chmod 777 /var/log/app
+
 # Create non-root user
 RUN addgroup -S app && adduser -S -G app -u 10001 app
 USER app

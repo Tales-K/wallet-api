@@ -37,4 +37,4 @@ logging:
     com.zaxxer.hikari: INFO
     root: WARN
   file:
-    name: /var/log/wallet-app/wallet-app.log
+    name: ${LOGGING_FILE_PATH:/var/log/app}/app.log

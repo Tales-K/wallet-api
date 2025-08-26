@@ -17,6 +17,9 @@ spring:
     type: simple
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yml
+  zipkin:
+    base-url: http://zipkin:9411
+    enabled: true
 
 server:
   port: 8080
@@ -83,6 +86,12 @@ management:
         http:
           server:
             requests: 10s
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
 
 info:
   app:
@@ -108,4 +117,7 @@ logging:
     com.zaxxer.hikari.HikariConfig: OFF
     liquibase: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} [traceId=%X{traceId}] [spanId=%X{spanId}] [ip=%X{ip}] [userAgent=%X{userAgent}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} [traceId=%X{traceId}] [spanId=%X{spanId}] [ip=%X{ip}] [userAgent=%X{userAgent}] - %msg%n"
+  file:
+    name: ${LOGGING_FILE_PATH:/var/log/app}/app.log

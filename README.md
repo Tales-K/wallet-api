@@ -66,6 +66,7 @@ docker compose -f infra/docker-compose.yml up --build
 
 - Docker Compose is used to orchestrate the services.
 - Added optional observability stack (Grafana, Loki, Promtail) for metrics and logs.
+- Added optional Zipkin for distributed tracing.
 - Nginx is used as a load balancer to distribute requests across multiple API instances.
 - k6 is used for load testing the API.
 - Testcontainers are used for integration tests.
@@ -93,17 +94,18 @@ docker compose -f infra/docker-compose.yml up --build
 
 # Running load-balancer, monitoring and load tests
 
-1. Bring up Postgres, Nginx, Grafana, Loki, Prometheus, Promtail and 3 Java API instances
+1. Bring up Postgres, Nginx, Grafana, Prometheus, Loki & Promtail, Zipkin and 3 Java API instances
 
 ```bash
 docker compose \
   -f infra/docker-compose.yml \
   -f infra/docker-compose.lb.yml \
   -f infra/docker-compose.observability.yml \
+  -f infra/docker-compose.zipkin.yml \
   up -d --build --scale app=3
 ```
 
-2. Try and fail to destroy the api with load tests
+2. Run load tests
 
 Deposits:
 
@@ -125,5 +127,7 @@ K6_SCRIPT=/scripts/transfers.js docker compose -f infra/docker-compose.k6.yml up
 
 3. Check Grafana (user and password: admin)
 
+- [Swagger through Nginx](http://localhost:8081/wallet-api/swagger-ui/index.html)
 - [Metrics](http://localhost:3000/explore/metrics/trail)
-- [Logs](http://localhost:3000/explore?left=%5B%22now-1h%22%2C%22now%22%2C%22Loki%22%2C%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%20%7C%20line_format%20%5C%22%7B%7B.msg%7D%7D%5C%22%22%7D%5D)
+- [Logs](http://localhost:3000/explore?left=%5B%22now-1h%22,%22now%22,%22Loki%22,%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%22%7D%5D)
+- [Zipkin Traces](http://localhost:9411)
