@@ -1,14 +1,8 @@
 services:
   k6:
     image: grafana/k6:0.52.0
-    network_mode: "host"
     environment:
       BASE_URL: ${BASE_URL:-http://lb}
-      VUS: ${VUS:-200}
-      ITERATIONS_PER_VU: ${ITERATIONS_PER_VU:-100}
-      AMOUNT: ${AMOUNT:-1.00}
-      TOTAL_DEPOSITS: ${TOTAL_DEPOSITS:-20000}
-      # Set to one of: /scripts/deposits.js, /scripts/withdraws.js, /scripts/transfers.js
       K6_SCRIPT: ${K6_SCRIPT:-deposits.js}
     command: [ "run", "/scripts/${K6_SCRIPT}" ]
     volumes:

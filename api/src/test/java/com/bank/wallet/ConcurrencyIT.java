@@ -1,5 +1,6 @@
 package com.bank.wallet;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +10,6 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
+@Tag("integration")
 class ConcurrencyIT {
 
 	@Container
@@ -46,16 +47,13 @@ class ConcurrencyIT {
 	@Test
 	@Timeout(60)
 	void concurrentDeposits_sumMatches() {
-		// arrange
 		var walletId = createWalletRequest();
 		var threads = 100;
 		var perThread = 200;
 		var amount = "1.00";
 
-		// act
 		runParallel(threads, perThread, () -> depositRequest(walletId, amount));
 
-		// assert
 		var expected = threads * perThread * Double.parseDouble(amount);
 		var actual = Double.parseDouble(getBalanceRequest(walletId));
 		assertThat(Math.abs(actual - expected)).isLessThan(0.0001);
@@ -64,7 +62,6 @@ class ConcurrencyIT {
 	@Test
 	@Timeout(90)
 	void crossTransfers_noDeadlocks_balancesConserved() {
-		// arrange
 		var a = createWalletRequest();
 		var b = createWalletRequest();
 		depositRequest(a, "1000.00");
@@ -74,7 +71,6 @@ class ConcurrencyIT {
 		var aExpectedBalance = new AtomicReference<>(BigDecimal.valueOf(1000.00D));
 		var bExpectedBalance = new AtomicReference<>(BigDecimal.valueOf(1000.00D));
 
-		// act
 		runParallel(threads, perThread, () -> {
 			if (ThreadLocalRandom.current().nextBoolean()) {
 				transferRequest(a, b, "1.00");
@@ -87,7 +83,6 @@ class ConcurrencyIT {
 			}
 		});
 
-		// assert
 		var balanceA = Double.parseDouble(getBalanceRequest(a));
 		var balanceB = Double.parseDouble(getBalanceRequest(b));
 		var sum = balanceA + balanceB;
@@ -98,19 +93,17 @@ class ConcurrencyIT {
 		assertThat(Math.abs(balanceB - bExpectedBalance.get().doubleValue())).isLessThan(0.0001);
 	}
 
-	// Helpers
-
 	String createWalletRequest() {
-		HttpHeaders h = new HttpHeaders();
+		var h = new HttpHeaders();
 		h.setContentType(MediaType.APPLICATION_JSON);
 		h.add("Idempotency-Key", UUID.randomUUID().toString());
-		ResponseEntity<WalletResp> res = http.postForEntity(URI.create("/api/v1/wallets"), new HttpEntity<>("{}", h), WalletResp.class);
+		var res = http.postForEntity(URI.create("/api/v1/wallets"), new HttpEntity<>("{}", h), WalletResp.class);
 		assertThat(res.getStatusCode().value()).isEqualTo(201);
 		return res.getBody().wallet_id() != null ? res.getBody().wallet_id() : res.getBody().walletId();
 	}
 
 	void depositRequest(String walletId, String amount) {
-		HttpHeaders h = new HttpHeaders();
+		var h = new HttpHeaders();
 		h.setContentType(MediaType.APPLICATION_JSON);
 		h.add("Idempotency-Key", UUID.randomUUID().toString());
 		http.postForEntity(URI.create("/api/v1/wallets/" + walletId + "/deposit"),
@@ -118,7 +111,7 @@ class ConcurrencyIT {
 	}
 
 	void transferRequest(String from, String to, String amount) {
-		HttpHeaders h = new HttpHeaders();
+		var h = new HttpHeaders();
 		h.setContentType(MediaType.APPLICATION_JSON);
 		h.add("Idempotency-Key", UUID.randomUUID().toString());
 		http.postForEntity(URI.create("/api/v1/transfers"),

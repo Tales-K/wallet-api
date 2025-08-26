@@ -32,6 +32,13 @@ docker compose \
 
 ### 2) Check API status
 
+Credentials:
+
+```
+user: admin
+password: admin
+```
+
 - [Metrics](http://localhost:3000/explore/metrics/trail)
 - [Logs](http://localhost:3000/explore?left=%5B%22now-1h%22,%22now%22,%22Loki%22,%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%22%7D%5D)
 - [Traces](http://localhost:9411)
@@ -98,7 +105,7 @@ You can replace `transfers.js` with `withdraws.js` or `deposits.js` to test thos
 Classic unit tests made with JUnit and Mockito.
 
 ```bash
-./api/mvnw -f api/pom.xml clean verify
+./api/mvnw -f api/pom.xml test
 ```
 
 ### Integration tests
@@ -106,7 +113,7 @@ Classic unit tests made with JUnit and Mockito.
 Made with Testcontainers, they run a real Postgres instance in a container.
 
 ```bash
-./api/mvnw -f api/pom.xml -Dit.test=ConcurrencyIT clean test-compile failsafe:integration-test failsafe:verify
+./api/mvnw -f api/pom.xml -Dit.test=ConcurrencyIT failsafe:integration-test failsafe:verify
 ```
 
 ### Load tests
