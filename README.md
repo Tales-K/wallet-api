@@ -21,6 +21,8 @@ Pre-requisites:
 
 ### 1) Run all services (API, db, load-balancer, monitoring and tracing):
 
+`Clone this project run all commands in its root.`
+
 ```bash
 docker compose \
   -f infra/docker-compose.yml \
