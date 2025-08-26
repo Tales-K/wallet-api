@@ -106,8 +106,8 @@ logging:
     com.bank.wallet: DEBUG
     org.springframework.web: INFO
     org.springframework.jdbc: INFO
-    org.springframework.jdbc.core: DEBUG
-    org.springframework.jdbc.datasource: DEBUG
+    org.springframework.jdbc.core: INFO
+    org.springframework.jdbc.datasource: INFO
     org.hibernate: WARN
     org.hibernate.SQL: WARN
     org.hibernate.type: WARN

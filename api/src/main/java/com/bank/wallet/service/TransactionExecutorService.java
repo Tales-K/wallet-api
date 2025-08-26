@@ -24,6 +24,7 @@ public class TransactionExecutorService {
 
 	@Transactional
 	public ResponseEntity<String> deposit(IdempotencyKey key, UUID walletId, TransactionRequestDto request) {
+		log.info("Deposit: wallet={}, amount={}", walletId, request.getAmount());
 		try {
 			var newBalance = walletService.depositAndGetNewBalance(key, walletId, request.getAmount());
 			ledgerService.createDepositEntry(key.getRefId(), walletId, request.getAmount(), newBalance);
@@ -31,13 +32,14 @@ public class TransactionExecutorService {
 			var body = idempotencyService.markCompleted(key, 200, responseDto, IdempotencyStatus.SUCCEEDED);
 			return ResponseEntity.ok(body);
 		} catch (Exception e) {
-			log.error("Error processing deposit for wallet: {}", walletId, e);
+			log.error("Deposit failed: wallet={}", walletId, e);
 			throw e;
 		}
 	}
 
 	@Transactional
 	public ResponseEntity<String> withdraw(IdempotencyKey key, UUID walletId, TransactionRequestDto request) {
+		log.info("Withdraw: wallet={}, amount={}", walletId, request.getAmount());
 		try {
 			var newBalance = walletService.withdrawAndGetNewBalance(key, walletId, request.getAmount());
 			ledgerService.createWithdrawEntry(key.getRefId(), walletId, request.getAmount(), newBalance);
@@ -45,7 +47,7 @@ public class TransactionExecutorService {
 			var body = idempotencyService.markCompleted(key, 200, responseDto, IdempotencyStatus.SUCCEEDED);
 			return ResponseEntity.ok(body);
 		} catch (Exception e) {
-			log.error("Error processing withdrawal for wallet: {}", walletId, e);
+			log.error("Withdraw failed: wallet={}", walletId, e);
 			throw e;
 		}
 	}

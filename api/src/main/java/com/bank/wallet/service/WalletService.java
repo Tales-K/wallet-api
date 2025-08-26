@@ -31,6 +31,7 @@ public class WalletService {
 
 	@Transactional
 	public WalletResponseDto createWallet() {
+		log.info("Creating wallet");
 		var now = OffsetDateTime.now();
 		var wallet = Wallet.builder()
 			.currentBalance(BigDecimal.ZERO)

@@ -10,27 +10,47 @@ It is designed to run multiple stateless instances concurrently without distribu
 3. [Assumptions](#assumptions)
 4. [Architecture Overview](#architecture-overview)
 5. [Infrastructure](#infrastructure)
-6. [Running the API locally](#running-the-api-locally)
-7. [Running unit tests](#running-unit-tests)
-8. [Running integration tests](#running-integration-tests)
-9. [Running load-balancer, monitoring and load tests](#running-load-balancer-monitoring-and-load-tests)
+6. [Running tests](#running-tests)
+8. [Running the API locally](#running-the-api-locally)
 
 # How to run the project
 
 Pre-requisites:
 
 - Docker and Docker Compose.
-- (Optional) For local run: JDK 21, Maven and Postgres.
 
-1) Run API + PostgreSQL DB
+### 1) Run all services (API, db, load-balancer, monitoring and tracing):
 
 ```bash
-docker compose -f infra/docker-compose.yml up --build
+docker compose \
+  -f infra/docker-compose.yml \
+  -f infra/docker-compose.lb.yml \
+  -f infra/docker-compose.observability.yml \
+  -f infra/docker-compose.zipkin.yml \
+  up -d --build --scale app=3
 ```
 
-2) Access the API documentation (endpoints, schemas and errors) using Swagger UI at:
+### 2) Check API status
 
-- http://localhost:8081/wallet-api/swagger-ui/index.html
+- [Metrics](http://localhost:3000/explore/metrics/trail)
+- [Logs](http://localhost:3000/explore?left=%5B%22now-1h%22,%22now%22,%22Loki%22,%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%22%7D%5D)
+- [Traces](http://localhost:9411)
+
+### 3) Run requests
+
+#### Option 1
+
+Run manually through [the API documentation](http://localhost:8081/wallet-api/swagger-ui/index.html) (has endpoints, schemas and errors)
+
+#### Option 2
+
+Run a load test and do lots of requests:
+
+```bash
+K6_SCRIPT=transfers.js docker compose -f infra/docker-compose.k6.yml run --rm k6
+```
+
+You can replace `transfers.js` with `withdraws.js` or `deposits.js` to test those operations.
 
 # Decisions
 
@@ -65,69 +85,45 @@ docker compose -f infra/docker-compose.yml up --build
 # Infrastructure
 
 - Docker Compose is used to orchestrate the services.
-- Added optional observability stack (Grafana, Loki, Promtail) for metrics and logs.
-- Added optional Zipkin for distributed tracing.
+- Added observability stack (Grafana, Loki, Promtail) for metrics and logs.
+- Added tracing stack (Micrometer, Zipkin) for distributed tracing.
 - Nginx is used as a load balancer to distribute requests across multiple API instances.
 - k6 is used for load testing the API.
 - Testcontainers are used for integration tests.
 
-# Running the API locally
+# Running tests
 
-1. Start your postgres with a wallet database, wallet_user and wallet_password credentials.
-2. Run the API (it lives under api/ directory):
+### Unit tests
 
-```bash
-./api/mvnw -f api/pom.xml spring-boot:run
-```
-
-# Running unit tests
+Classic unit tests made with JUnit and Mockito.
 
 ```bash
 ./api/mvnw -f api/pom.xml clean verify
 ```
 
-# Running integration tests
+### Integration tests
+
+Made with Testcontainers, they run a real Postgres instance in a container.
 
 ```bash
 ./api/mvnw -f api/pom.xml -Dit.test=ConcurrencyIT clean test-compile failsafe:integration-test failsafe:verify
 ```
 
-# Running load-balancer, monitoring and load tests
+### Load tests
 
-1. Bring up Postgres, Nginx, Grafana, Prometheus, Loki & Promtail, Zipkin and 3 Java API instances
-
-```bash
-docker compose \
-  -f infra/docker-compose.yml \
-  -f infra/docker-compose.lb.yml \
-  -f infra/docker-compose.observability.yml \
-  -f infra/docker-compose.zipkin.yml \
-  up -d --build --scale app=3
-```
-
-2. Run load tests
-
-Deposits:
+Made with k6, they target the load-balancer so it spreads across 3 instances.
 
 ```bash
-K6_SCRIPT=/scripts/deposits.js docker compose -f infra/docker-compose.k6.yml up --build --abort-on-container-exit k6
+./api/mvnw -f api/pom.xml -Dit.test=ConcurrencyIT clean test-compile failsafe:integration-test failsafe:verify
 ```
 
-Withdraws:
+# Running the API locally
+
+#### Requires JDK 21, Maven and Postgres
+
+1. Start your postgres with a `wallet` database, `wallet_user` and `wallet_password` credentials.
+2. Run the API:
 
 ```bash
-K6_SCRIPT=/scripts/withdraws.js docker compose -f infra/docker-compose.k6.yml up --build --abort-on-container-exit k6
+./api/mvnw -f api/pom.xml spring-boot:run
 ```
-
-Transfers:
-
-```bash
-K6_SCRIPT=/scripts/transfers.js docker compose -f infra/docker-compose.k6.yml up --build --abort-on-container-exit k6
-```
-
-3. Check Grafana (user and password: admin)
-
-- [Swagger through Nginx](http://localhost:8081/wallet-api/swagger-ui/index.html)
-- [Metrics](http://localhost:3000/explore/metrics/trail)
-- [Logs](http://localhost:3000/explore?left=%5B%22now-1h%22,%22now%22,%22Loki%22,%7B%22expr%22%3A%22%7Bjob%3D%5C%22app-logs%5C%22%7D%22%7D%5D)
-- [Zipkin Traces](http://localhost:9411)

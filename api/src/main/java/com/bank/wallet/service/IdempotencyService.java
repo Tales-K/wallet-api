@@ -36,20 +36,23 @@ public class IdempotencyService {
 		var staleSeconds = walletProperties.getIdempotency().getStaleThresholdSeconds();
 
 		var inserted = idempotencyKeyRepository.tryInsertWithRef(idempotencyKey, contextUtils.getCurrentRequestMethod(), contextUtils.getCurrentRequestPath(), requestHash, refId);
-		if (inserted.isPresent()) return inserted.get();
+		if (inserted.isPresent()) {
+			return inserted.get();
+		}
 
-		// cannot insert, so already exists
 		var existing = idempotencyKeyRepository.findByIdempotencyKeyAndRequestHash(idempotencyKey, requestHash)
 			.orElseThrow(() -> new IdempotencyConflictException("IDEMPOTENCY_KEY_REUSE", "Idempotency key reused for different request"));
 
-		// if in progress, try to take over if stale
 		if (existing.getStatus() == IdempotencyStatus.IN_PROGRESS) {
 			var taken = idempotencyKeyRepository.tryTakeOverReturning(idempotencyKey, staleSeconds);
-			if (taken.isPresent()) return taken.get();
+			if (taken.isPresent()) {
+				log.info("Took over stale idempotency key: {}", idempotencyKey);
+				return taken.get();
+			}
 			throw new IdempotencyInProgressException("Request is being processed by another instance");
 		}
 
-		// if not in progress, then it's a replay
+		log.info("Replaying idempotency key: {}", idempotencyKey);
 		return existing;
 	}
 
@@ -66,14 +69,14 @@ public class IdempotencyService {
 			var json = serializationUtils.toJson(responseDto);
 			var rows = idempotencyKeyRepository.markCompleted(key.getIdempotencyKey(), httpStatus, json, status.name().toLowerCase(), key.getRequestHash());
 			if (rows != 1) {
-				log.error("Failed state transition to {} for key {} (hash mismatch or state)", status, key.getIdempotencyKey());
+				log.error("Failed idempotency state transition for key: {}", key.getIdempotencyKey());
 				throw new IllegalStateException("Idempotency key not in in_progress state or hash mismatch");
 			}
 			return json;
 		} catch (IllegalStateException e) {
 			throw e;
 		} catch (Exception e) {
-			log.error("Failed to mark {} for key {}", status, key.getIdempotencyKey(), e);
+			log.error("Failed to mark idempotency key: {}", key.getIdempotencyKey(), e);
 			throw new RuntimeException("Failed to update idempotency status", e);
 		}
 	}

@@ -35,6 +35,8 @@ public class TransferExecutorService {
 		var amount = request.getAmount();
 		var from = request.getFromWalletId();
 		var to = request.getToWalletId();
+		log.info("Transfer: from={}, to={}, amount={}", from, to, amount);
+
 		var balanceByWallet = new HashMap<UUID, BigDecimal>(2);
 
 		var operations = Stream.of(
